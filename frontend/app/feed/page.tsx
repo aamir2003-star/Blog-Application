@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import TopNavBar from '@/components/layout/TopNavBar';
 import SideNavBar from '@/components/layout/SideNavBar';
 import RightSidebar from '@/components/layout/RightSidebar';
+import { useUIStore } from '@/lib/ui-store';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 
@@ -41,6 +42,7 @@ function PostCardSkeleton() {
 // ─── Feed Page ─────────────────────────────────────────────────────────────
 export default function FeedPage() {
   const router = useRouter();
+  const { sidebarOpen } = useUIStore();
 
   // Dynamic Tabs & Filter States
   const [categories, setCategories] = useState<string[]>([]);
@@ -147,13 +149,16 @@ export default function FeedPage() {
       <div className="flex-1 flex w-full">
         <SideNavBar />
         
-        <div className="flex-1 flex justify-center">
-          <main className="flex-1 max-w-[720px] w-full border-r border-outline-variant/30 min-h-[calc(100vh-57px)]">
+        <div className="flex-1 flex justify-between pl-16 max-w-[1150px] transition-all duration-[450ms] ease-in-out">
+          <main 
+            style={{ transform: sidebarOpen ? 'translateX(0)' : 'translateX(100px)' }}
+            className="flex-1 max-w-[800px] w-full border-r border-outline-variant/30 min-h-[calc(100vh-57px)] transition-all duration-[450ms] ease-in-out"
+          >
             
             {/* Navigation Tabs Header */}
             <div className="sticky top-[57px] bg-surface/95 backdrop-blur z-40 border-b border-outline-variant/30 px-6 pt-6">
-              <div className="flex gap-6 overflow-x-auto no-scrollbar">
-                {['For you', 'Following', ...categories].map((tab) => (
+              <div className="flex gap-6 overflow-x-auto no-scrollbar items-center">
+                {['For you', 'Following'].map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
@@ -169,6 +174,20 @@ export default function FeedPage() {
                     )}
                   </button>
                 ))}
+
+                {activeTab !== 'For you' && activeTab !== 'Following' && (
+                  <div className="pb-4 whitespace-nowrap text-sm font-label-caps relative flex items-center gap-1.5 text-primary font-bold">
+                    <span>{activeTab}</span>
+                    <button
+                      onClick={() => setActiveTab('For you')}
+                      className="p-0.5 hover:bg-primary/10 rounded-full transition-colors flex items-center justify-center cursor-pointer select-none text-primary border-none bg-transparent"
+                      title="Clear topic filter"
+                    >
+                      <span className="material-symbols-outlined text-[15px] font-bold">close</span>
+                    </button>
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full"></div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -281,7 +300,10 @@ export default function FeedPage() {
 
           </main>
           
-          <RightSidebar />
+          <RightSidebar 
+            onSelectCategory={(topic) => setActiveTab(topic)} 
+            style={{ transform: sidebarOpen ? 'translateX(0)' : 'translateX(110px)' }}
+          />
         </div>
       </div>
     </div>

@@ -74,7 +74,7 @@ export default function ArticleReaderPage({ params }: { params: Promise<{ slug: 
       <div className="flex-1 flex w-full">
         <SideNavBar />
         
-        <main className="flex-1 flex justify-center py-10 px-margin-mobile md:px-margin-desktop relative">
+        <main className="flex-1 flex justify-center py-10 pl-16 pr-margin-mobile md:pl-16 md:pr-margin-desktop relative transition-all duration-[450ms] ease-in-out">
           {/* Floating Back Navigation Header */}
           <Link 
             href="/feed" 

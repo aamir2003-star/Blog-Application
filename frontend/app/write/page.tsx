@@ -28,15 +28,21 @@ const RichEditor = dynamic(() => import('@/components/editor/RichEditor'), {
 });
 
 const CATEGORIES = [
-  'Engineering',
-  'Design',
-  'Product',
-  'AI & Machine Learning',
+  'JavaScript',
+  'TypeScript',
+  'React',
+  'Next.js',
+  'Node.js',
+  'Python',
+  'System Design',
   'DevOps',
-  'Career',
+  'Databases',
+  'Cloud & AWS',
+  'Security',
+  'Algorithms & DSA',
+  'Career & Growth',
   'Open Source',
-  'Startups',
-  'Culture',
+  'Other',
 ];
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
@@ -51,8 +57,151 @@ function slugify(text: string): string {
     .slice(0, 80);
 }
 
-type BlockType = 'category' | 'coverImage' | 'excerpt' | 'keywords' | 'content';
+type MetadataBlockType = 'category' | 'coverImage' | 'excerpt' | 'keywords';
 
+interface CanvasBlock {
+  id: string;
+  type: 'content' | 'image_block' | 'code_block';
+  value: string;
+  caption?: string; // only for image_block
+  language?: string; // only for code_block
+}
+
+// ─── Dual Input Image Uploader Component ─────────────────────────────────────
+function DualImageUploader({
+  value,
+  onChange,
+  token,
+  label
+}: {
+  value: string;
+  onChange: (url: string) => void;
+  token: string | null;
+  label: string;
+}) {
+  const [uploadMode, setUploadMode] = useState<'url' | 'file'>(value && !value.includes('cloudinary') ? 'url' : 'file');
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+
+  const handleFileUpload = async (file: File) => {
+    if (!token) return;
+    setUploading(true);
+    setUploadError('');
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('taskType', 'blog_images');
+
+    try {
+      const res = await fetch(`${API_BASE}/uploads/image`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.url) {
+        onChange(data.url);
+      } else {
+        setUploadError(data.message || 'Image upload failed.');
+      }
+    } catch (err) {
+      console.error(err);
+      setUploadError('Failed to connect to backend upload portal.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => setUploadMode('file')}
+          className={`px-3 py-1.5 text-[11px] rounded-full border font-label-caps transition-all cursor-pointer ${
+            uploadMode === 'file'
+              ? 'bg-primary/10 border-primary/30 text-primary font-bold'
+              : 'border-outline-variant/30 text-on-surface-variant hover:text-on-surface'
+          }`}
+        >
+          Upload Local File
+        </button>
+        <button
+          type="button"
+          onClick={() => setUploadMode('url')}
+          className={`px-3 py-1.5 text-[11px] rounded-full border font-label-caps transition-all cursor-pointer ${
+            uploadMode === 'url'
+              ? 'bg-primary/10 border-primary/30 text-primary font-bold'
+              : 'border-outline-variant/30 text-on-surface-variant hover:text-on-surface'
+          }`}
+        >
+          Paste Image URL
+        </button>
+      </div>
+
+      {uploadMode === 'url' ? (
+        <div className="relative">
+          <Input
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder="Paste a direct image URL (e.g. https://unsplash.com/...)"
+            className="bg-surface-container-lowest border-outline-variant/40 font-body-md pr-10 h-11 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary"
+          />
+          <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">link</span>
+        </div>
+      ) : (
+        <div className="border border-dashed border-outline-variant/50 hover:border-primary/50 rounded-xl p-6 bg-surface-container-lowest flex flex-col items-center justify-center relative cursor-pointer transition-colors">
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleFileUpload(file);
+            }}
+            className="absolute inset-0 opacity-0 cursor-pointer z-10"
+            disabled={uploading}
+          />
+          {uploading ? (
+            <div className="flex flex-col items-center gap-2">
+              <span className="material-symbols-outlined animate-spin text-[28px] text-primary">progress_activity</span>
+              <span className="text-xs text-on-surface-variant font-medium">Saving to Cloudinary...</span>
+            </div>
+          ) : value ? (
+            <div className="text-center space-y-1">
+              <span className="material-symbols-outlined text-[28px] text-primary">cloud_done</span>
+              <p className="text-xs text-primary font-semibold">Uploaded Successfully!</p>
+              <p className="text-[9px] text-on-surface-variant/80 truncate max-w-xs px-4 mx-auto">{value}</p>
+            </div>
+          ) : (
+            <div className="text-center space-y-1">
+              <span className="material-symbols-outlined text-[28px] text-outline-variant">cloud_upload</span>
+              <p className="text-xs font-semibold text-on-surface">Click or drag local file to upload</p>
+              <p className="text-[10px] text-on-surface-variant/60">Supports PNG, JPG, JPEG up to 5MB</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {uploadError && (
+        <p className="text-error text-xs font-medium mt-1">{uploadError}</p>
+      )}
+
+      {value && (
+        <div className="aspect-video rounded-xl overflow-hidden border border-outline-variant/20 bg-surface-container relative group">
+          <img
+            src={value}
+            alt={label}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-102"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main Write Page Component ───────────────────────────────────────────────
 export default function WritePage() {
   const { user, accessToken, refreshUser } = useAuth();
   const router = useRouter();
@@ -61,13 +210,32 @@ export default function WritePage() {
   // ── Form State ──
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('');
+  const [categoriesList, setCategoriesList] = useState<string[]>(CATEGORIES);
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/posts/categories`);
+        const data = await res.json();
+        if (data.success && Array.isArray(data.data)) {
+          setCategoriesList(data.data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch categories:', err);
+      }
+    };
+    fetchCategories();
+  }, []);
+
   const [coverImage, setCoverImage] = useState('');
   const [excerpt, setExcerpt] = useState('');
   const [keywords, setKeywords] = useState('');
-  const [content, setContent] = useState('');
 
-  // ── Block State ──
-  const [activeBlocks, setActiveBlocks] = useState<BlockType[]>([]);
+  // ── Canvas Dynamic Blocks State ──
+  const [canvasBlocks, setCanvasBlocks] = useState<CanvasBlock[]>([]);
+
+  // ── Active Metadata Blocks State ──
+  const [activeBlocks, setActiveBlocks] = useState<MetadataBlockType[]>([]);
   const [showToolbar, setShowToolbar] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   
@@ -96,6 +264,99 @@ export default function WritePage() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showMoreMenu]);
 
+  // ── HTML Compiler & Reconstructor Utilities ──
+  const compileCanvasBlocks = (blocks: CanvasBlock[]): string => {
+    return blocks
+      .map((block) => {
+        if (block.type === 'content') {
+          return `<!-- block:content -->\n${block.value}`;
+        }
+        if (block.type === 'image_block') {
+          const captionEncoded = encodeURIComponent(block.caption || '');
+          return `<!-- block:image_block caption:${captionEncoded} -->\n<figure class="my-6 text-center"><img src="${block.value}" alt="${block.caption || 'Image'}" class="rounded-lg max-w-full mx-auto" />${block.caption ? `<figcaption class="text-xs text-on-surface-variant/80 mt-2 font-body-md">${block.caption}</figcaption>` : ''}</figure>`;
+        }
+        if (block.type === 'code_block') {
+          const lang = block.language || 'javascript';
+          return `<!-- block:code_block language:${lang} -->\n<pre><code class="language-${lang}">${block.value}</code></pre>`;
+        }
+        return '';
+      })
+      .join('\n\n');
+  };
+
+  const parseHtmlToBlocks = (html: string): CanvasBlock[] => {
+    if (!html) return [];
+    
+    // Backwards compatibility: load legacy posts directly inside a single Rich Editor
+    if (!html.includes('<!-- block:')) {
+      return [{ id: `content_${Math.random().toString(36).slice(2, 9)}`, type: 'content', value: html }];
+    }
+
+    const blocks: CanvasBlock[] = [];
+    const parts = html.split('<!-- block:');
+    
+    if (parts[0].trim()) {
+      blocks.push({
+        id: `content_${Math.random().toString(36).slice(2, 9)}`,
+        type: 'content',
+        value: parts[0].trim()
+      });
+    }
+
+    for (let i = 1; i < parts.length; i++) {
+      const part = parts[i];
+      const closeCommentIdx = part.indexOf('-->');
+      if (closeCommentIdx === -1) continue;
+
+      const header = part.slice(0, closeCommentIdx).trim();
+      let content = part.slice(closeCommentIdx + 3).trim();
+
+      const id = `${header.split(' ')[0]}_${Math.random().toString(36).slice(2, 9)}`;
+
+      if (header === 'content') {
+        blocks.push({
+          id,
+          type: 'content',
+          value: content
+        });
+      } else if (header.startsWith('image_block')) {
+        let caption = '';
+        const captionMatch = header.match(/caption:([^ ]+)/);
+        if (captionMatch) {
+          caption = decodeURIComponent(captionMatch[1]);
+        }
+
+        const srcMatch = content.match(/src="([^"]+)"/);
+        const src = srcMatch ? srcMatch[1] : '';
+
+        blocks.push({
+          id,
+          type: 'image_block',
+          value: src,
+          caption
+        });
+      } else if (header.startsWith('code_block')) {
+        let language = 'javascript';
+        const langMatch = header.match(/language:([^ ]+)/);
+        if (langMatch) {
+          language = langMatch[1];
+        }
+
+        const codeMatch = content.match(/<code[^>]*>([\s\S]*?)<\/code>/);
+        const codeText = codeMatch ? codeMatch[1] : '';
+
+        blocks.push({
+          id,
+          type: 'code_block',
+          value: codeText,
+          language
+        });
+      }
+    }
+
+    return blocks;
+  };
+
   // ── Database Fetch Draft Routine ──
   const fetchPostFromDatabase = async (id: string) => {
     if (!accessToken) return;
@@ -112,20 +373,21 @@ export default function WritePage() {
         const post = resData.data;
         setPostId(post._id);
         setTitle(post.title || '');
-        setCategory(post.category || '');
+        setCategory(post.category === 'Other' ? '' : (post.category || ''));
         setCoverImage(post.coverImage || '');
-        setExcerpt(post.excerpt || '');
+        setExcerpt(post.excerpt === 'Draft excerpt...' ? '' : (post.excerpt || ''));
         setKeywords(post.seoKeywords || '');
-        setContent(post.htmlContent || '');
         
-        // Reconstruct active blocks dynamically based on database properties
-        const blocks: BlockType[] = [];
-        if (post.category) blocks.push('category');
-        if (post.coverImage) blocks.push('coverImage');
-        if (post.excerpt) blocks.push('excerpt');
-        if (post.seoKeywords) blocks.push('keywords');
-        if (post.htmlContent) blocks.push('content');
-        setActiveBlocks(blocks);
+        // Dynamic block restoration
+        const parsed = parseHtmlToBlocks(post.htmlContent || '');
+        setCanvasBlocks(parsed);
+        
+        const metadataBlocks: MetadataBlockType[] = [];
+        if (post.category && post.category !== 'Other') metadataBlocks.push('category');
+        if (post.coverImage) metadataBlocks.push('coverImage');
+        if (post.excerpt && post.excerpt !== 'Draft excerpt...') metadataBlocks.push('excerpt');
+        if (post.seoKeywords) metadataBlocks.push('keywords');
+        setActiveBlocks(metadataBlocks);
 
         lastSavedRef.current = JSON.stringify({
           title: post.title || '',
@@ -147,7 +409,7 @@ export default function WritePage() {
     }
   };
 
-  // Load draft on mount (priority: query param id > localStorage backup)
+  // Load draft on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -158,7 +420,6 @@ export default function WritePage() {
           fetchPostFromDatabase(id);
         }
       } else {
-        // Fallback to localStorage draft check
         const savedDraft = localStorage.getItem('writen_offline_draft');
         if (savedDraft) {
           try {
@@ -172,7 +433,13 @@ export default function WritePage() {
                 setCoverImage(draft.coverImage ?? '');
                 setExcerpt(draft.excerpt ?? '');
                 setKeywords(draft.keywords ?? '');
-                setContent(draft.content ?? '');
+                
+                if (draft.canvasBlocks) {
+                  setCanvasBlocks(draft.canvasBlocks);
+                } else if (draft.content) {
+                  setCanvasBlocks([{ id: 'restored_content_block', type: 'content', value: draft.content }]);
+                }
+                
                 setActiveBlocks(draft.activeBlocks ?? []);
                 lastSavedRef.current = JSON.stringify({
                   title: draft.title,
@@ -198,20 +465,74 @@ export default function WritePage() {
   // Auto-generated slug
   const slug = useMemo(() => slugify(title), [title]);
 
-  // Keyword chips for display
+  // Keyword chips
   const keywordChips = useMemo(
     () => keywords.split(',').map(k => k.trim()).filter(Boolean),
     [keywords]
   );
 
-  // Reading time calculator
+  // Dynamic Reading time calculator across all visual canvas blocks
   const readingTime = useMemo(() => {
-    const text = content.replace(/<[^>]*>/g, ''); // strip html tags
+    const htmlStr = compileCanvasBlocks(canvasBlocks);
+    const text = htmlStr.replace(/<[^>]*>/g, '');
     const words = text.trim().split(/\s+/).filter(Boolean).length;
     return Math.max(1, Math.ceil(words / 200));
-  }, [content]);
+  }, [canvasBlocks]);
 
-  const handleBlockAction = (blockType: BlockType) => {
+  const isWorkspaceCompletelyEmpty = (): boolean => {
+    const htmlStr = compileCanvasBlocks(canvasBlocks);
+    const textOnly = htmlStr.replace(/<[^>]*>/g, '').trim();
+    const hasAnyBlockContent = canvasBlocks.some(b => {
+      if (b.type === 'content' && b.value.replace(/<[^>]*>/g, '').trim()) return true;
+      if (b.type === 'image_block' && b.value.trim()) return true;
+      if (b.type === 'code_block' && b.value.trim()) return true;
+      return false;
+    });
+
+    return (
+      !title.trim() &&
+      !coverImage.trim() &&
+      !excerpt.trim() &&
+      !keywords.trim() &&
+      (!category.trim() || category === 'Other') &&
+      !hasAnyBlockContent
+    );
+  };
+
+  // ── Canvas Dynamic Blocks Handlers ──
+  const addCanvasBlock = (type: 'content' | 'image_block' | 'code_block') => {
+    const newBlock: CanvasBlock = {
+      id: `${type}_${Math.random().toString(36).slice(2, 9)}`,
+      type,
+      value: '',
+      caption: '',
+      language: 'javascript'
+    };
+    setCanvasBlocks([...canvasBlocks, newBlock]);
+    setShowToolbar(false);
+  };
+
+  const deleteCanvasBlock = (id: string) => {
+    setCanvasBlocks(canvasBlocks.filter(b => b.id !== id));
+  };
+
+  const updateCanvasBlock = (id: string, updates: Partial<CanvasBlock>) => {
+    setCanvasBlocks(canvasBlocks.map(b => b.id === id ? { ...b, ...updates } : b));
+  };
+
+  const moveCanvasBlock = (index: number, direction: 'up' | 'down') => {
+    const newBlocks = [...canvasBlocks];
+    const targetIdx = direction === 'up' ? index - 1 : index + 1;
+    if (targetIdx < 0 || targetIdx >= newBlocks.length) return;
+
+    const temp = newBlocks[index];
+    newBlocks[index] = newBlocks[targetIdx];
+    newBlocks[targetIdx] = temp;
+    setCanvasBlocks(newBlocks);
+  };
+
+  // ── Metadata Blocks Handlers ──
+  const handleMetadataBlockAction = (blockType: MetadataBlockType) => {
     if (activeBlocks.includes(blockType)) {
       setShowToolbar(false);
       const el = document.getElementById(`block-card-${blockType}`);
@@ -221,9 +542,7 @@ export default function WritePage() {
         setTimeout(() => el.classList.remove('ring-2', 'ring-primary/45'), 1500);
       }
       const inputEl = document.getElementById(`input-${blockType}`);
-      if (inputEl) {
-        inputEl.focus();
-      }
+      if (inputEl) inputEl.focus();
       return;
     }
 
@@ -244,7 +563,7 @@ export default function WritePage() {
     }, 100);
   };
 
-  const deleteBlock = (blockType: BlockType) => {
+  const deleteMetadataBlock = (blockType: MetadataBlockType) => {
     setActiveBlocks(activeBlocks.filter(b => b !== blockType));
     setErrors(prev => {
       const next = { ...prev };
@@ -254,89 +573,71 @@ export default function WritePage() {
     });
   };
 
-  // ── Aligned Zod Validation ──
+  // ── Dynamic Validations ──
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {};
     
-    // 1. Validate Title (mandatory, min 5 chars, max 200 chars in backend)
     if (!title.trim()) {
       newErrors.title = 'Title is required';
     } else if (title.trim().length < 5) {
-      newErrors.title = 'Title is too short (must be at least 5 characters)';
+      newErrors.title = 'Title must be at least 5 characters';
     } else if (title.trim().length > 200) {
-      newErrors.title = 'Title is too long (cannot exceed 200 characters)';
+      newErrors.title = 'Title cannot exceed 200 characters';
     }
 
-    // 2. Validate block presence
-    const required: BlockType[] = ['category', 'coverImage', 'excerpt', 'keywords', 'content'];
-    required.forEach(req => {
+    const requiredMetadata: MetadataBlockType[] = ['category', 'coverImage', 'excerpt', 'keywords'];
+    requiredMetadata.forEach(req => {
       if (!activeBlocks.includes(req)) {
-        newErrors[`block_${req}`] = `This workspace requires the ${req === 'content' ? 'Rich Content' : req.replace(/([A-Z])/g, ' $1')} block to be added.`;
+        newErrors[`block_${req}`] = `This workspace requires the ${req.replace(/([A-Z])/g, ' $1')} block to be configured.`;
       }
     });
 
-    // 3. Validate block values (if active)
     if (activeBlocks.includes('category')) {
-      if (!category) {
-        newErrors.category = 'Please select a category';
-      } else if (category.length < 2 || category.length > 50) {
-        newErrors.category = 'Category must be between 2 and 50 characters';
-      }
+      if (!category) newErrors.category = 'Please select a category';
     }
     
     if (activeBlocks.includes('coverImage')) {
       if (!coverImage.trim()) {
         newErrors.coverImage = 'Cover image URL is required';
-      } else {
-        try {
-          new URL(coverImage.trim());
-        } catch {
-          newErrors.coverImage = 'Please enter a valid cover image URL (e.g. https://...)';
-        }
       }
     }
     
     if (activeBlocks.includes('excerpt')) {
       if (!excerpt.trim()) {
         newErrors.excerpt = 'Excerpt is required';
-      } else if (excerpt.trim().length < 10) {
-        newErrors.excerpt = 'Excerpt is too short (must be at least 10 characters)';
       } else if (excerpt.trim().length > 500) {
-        newErrors.excerpt = 'Excerpt is too long (cannot exceed 500 characters)';
+        newErrors.excerpt = 'Excerpt cannot exceed 500 characters';
       }
     }
     
     if (activeBlocks.includes('keywords')) {
-      if (!keywords.trim()) {
-        newErrors.keywords = 'SEO keywords are required';
-      } else if (keywords.trim().length > 500) {
-        newErrors.keywords = 'SEO keywords string cannot exceed 500 characters';
-      }
+      if (!keywords.trim()) newErrors.keywords = 'SEO keywords are required';
     }
     
-    if (activeBlocks.includes('content')) {
-      const textOnly = content.replace(/<[^>]*>/g, '').trim();
-      if (!content.trim() || content === '<p></p>') {
-        newErrors.content = 'Content is required';
-      } else if (textOnly.length < 10) {
-        newErrors.content = 'Content is too short (must be at least 10 characters)';
-      }
+    // Canvas Content validations
+    const compiledContent = compileCanvasBlocks(canvasBlocks);
+    const textOnly = compiledContent.replace(/<[^>]*>/g, '').trim();
+    if (!textOnly) {
+      newErrors.canvas = 'Writing canvas content is required. Please type some stories!';
+    } else if (textOnly.length < 15) {
+      newErrors.canvas = 'Your canvas stories are too short (must be at least 15 characters)';
     }
+
+    // Inline image block validations
+    canvasBlocks.forEach((block, idx) => {
+      if (block.type === 'image_block' && !block.value.trim()) {
+        newErrors[`block_${block.id}`] = `Inline Image Block #${idx + 1} has no image uploaded or configured.`;
+      }
+    });
 
     setErrors(newErrors);
 
-    // Focus first invalid block
     if (Object.keys(newErrors).length > 0) {
       if (newErrors.title) {
         titleInputRef.current?.focus();
-      } else {
-        const firstErrorBlock = required.find(req => newErrors[req] || newErrors[`block_${req}`]);
-        if (firstErrorBlock && activeBlocks.includes(firstErrorBlock)) {
-          const cardEl = document.getElementById(`block-card-${firstErrorBlock}`);
-          if (cardEl) cardEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          const inputEl = document.getElementById(`input-${firstErrorBlock}`);
-          if (inputEl) inputEl.focus();
-        }
+      } else if (newErrors.canvas) {
+        const firstCanvasEl = document.getElementById('canvas-container');
+        if (firstCanvasEl) firstCanvasEl.scrollIntoView({ behavior: 'smooth' });
       }
       return false;
     }
@@ -345,11 +646,13 @@ export default function WritePage() {
 
   // ── API Publish Hook ──
   const handlePublish = async () => {
-    if (publishingRef.current) return; // Strict synchronous double-submission guard
+    if (publishingRef.current) return;
     if (!validate()) return;
     publishingRef.current = true;
     setPublishing(true);
     setSyncStatus('saving');
+
+    const compiledContent = compileCanvasBlocks(canvasBlocks);
 
     try {
       const url = postId ? `${API_BASE}/posts/${postId}` : `${API_BASE}/posts`;
@@ -363,7 +666,7 @@ export default function WritePage() {
         },
         body: JSON.stringify({
           title,
-          htmlContent: content,
+          htmlContent: compiledContent,
           category,
           excerpt,
           coverImage,
@@ -376,15 +679,13 @@ export default function WritePage() {
 
       if (resData.success) {
         setCreatedPost(resData.data);
-        setShowPreview(true); // Show Preview Overlay
+        setShowPreview(true);
         setSyncStatus('saved');
         
-        // Clear local storage offline draft once successfully published
         if (typeof window !== 'undefined') {
           localStorage.removeItem('writen_offline_draft');
         }
 
-        // Promote Visitor to Creator role inside Auth Context immediately
         if (resData.roleUpgraded) {
           await refreshUser();
         }
@@ -403,7 +704,7 @@ export default function WritePage() {
     } catch (err) {
       console.error(err);
       setSyncStatus('error');
-      setErrors({ submit: 'An unexpected connection error occurred. Make sure the backend server is running on port 5001.' });
+      setErrors({ submit: 'An unexpected connection error occurred. Make sure the backend server is running.' });
     } finally {
       publishingRef.current = false;
       setPublishing(false);
@@ -412,26 +713,26 @@ export default function WritePage() {
 
   // ── Auto-Save Draft Handler ──
   const autoSaveDraft = async () => {
-    if (publishingRef.current || (!title.trim() && !content.trim())) return;
+    if (publishingRef.current) return;
+    if (!postId && isWorkspaceCompletelyEmpty()) return;
 
+    const compiledContent = compileCanvasBlocks(canvasBlocks);
     const currentPayload = JSON.stringify({
       title,
       category,
       coverImage,
       excerpt,
       keywords,
-      content,
+      content: compiledContent,
     });
     
-    if (currentPayload === lastSavedRef.current) {
-      return; // Unchanged
-    }
+    if (currentPayload === lastSavedRef.current) return;
 
     setSyncStatus('saving');
 
     const payload = {
       title: title.trim() || 'Untitled Draft',
-      htmlContent: content,
+      htmlContent: compiledContent,
       category: category || 'Other',
       excerpt: excerpt || 'Draft excerpt...',
       coverImage: coverImage,
@@ -447,7 +748,7 @@ export default function WritePage() {
         coverImage,
         excerpt,
         keywords,
-        content,
+        canvasBlocks,
         activeBlocks,
       }));
     }
@@ -482,16 +783,15 @@ export default function WritePage() {
             coverImage,
             excerpt,
             keywords,
-            content,
+            canvasBlocks,
             activeBlocks,
           }));
         }
       } else {
-        console.error('Auto-save rejected:', resData.message);
         setSyncStatus('offline_saved');
       }
     } catch (err) {
-      console.error('Auto-save network error:', err);
+      console.error(err);
       setSyncStatus('offline_saved');
     }
   };
@@ -499,20 +799,22 @@ export default function WritePage() {
   // ── Manual Save Draft Trigger ──
   const handleSaveDraft = async () => {
     if (syncStatus === 'saving') return;
+    if (!postId && isWorkspaceCompletelyEmpty()) return;
     setSyncStatus('saving');
 
+    const compiledContent = compileCanvasBlocks(canvasBlocks);
     const currentPayload = JSON.stringify({
       title,
       category,
       coverImage,
       excerpt,
       keywords,
-      content,
+      content: compiledContent,
     });
 
     const payload = {
       title: title.trim() || 'Untitled Draft',
-      htmlContent: content,
+      htmlContent: compiledContent,
       category: category || 'Other',
       excerpt: excerpt || 'Draft excerpt...',
       coverImage: coverImage,
@@ -528,7 +830,7 @@ export default function WritePage() {
         coverImage,
         excerpt,
         keywords,
-        content,
+        canvasBlocks,
         activeBlocks,
       }));
     }
@@ -573,21 +875,24 @@ export default function WritePage() {
 
   // ── Auto-Save Effect Watcher ──
   useEffect(() => {
-    if (publishing || (!title.trim() && !content.trim())) return;
+    if (publishing) return;
+    if (!postId && isWorkspaceCompletelyEmpty()) return;
 
     const timer = setTimeout(() => {
       autoSaveDraft();
-    }, 2000); // 2000ms debounce
+    }, 2000);
 
     return () => clearTimeout(timer);
-  }, [title, category, coverImage, excerpt, keywords, content, publishing]);
+  }, [title, category, coverImage, excerpt, keywords, canvasBlocks, publishing, postId]);
 
   const insertOptions = [
-    { type: 'category' as BlockType, icon: 'category', label: 'Category Picker' },
-    { type: 'coverImage' as BlockType, icon: 'image', label: 'Featured Cover' },
-    { type: 'excerpt' as BlockType, icon: 'description', label: 'Short Excerpt' },
-    { type: 'keywords' as BlockType, icon: 'tag', label: 'SEO Keywords' },
-    { type: 'content' as BlockType, icon: 'edit_note', label: 'Rich Editor' },
+    { type: 'category' as any, icon: 'category', label: 'Category Picker', category: 'metadata' },
+    { type: 'coverImage' as any, icon: 'image', label: 'Featured Cover', category: 'metadata' },
+    { type: 'excerpt' as any, icon: 'description', label: 'Short Excerpt', category: 'metadata' },
+    { type: 'keywords' as any, icon: 'tag', label: 'SEO Keywords', category: 'metadata' },
+    { type: 'content' as any, icon: 'edit_note', label: 'Rich Editor', category: 'canvas' },
+    { type: 'image_block' as any, icon: 'add_photo_alternate', label: 'Inline Image', category: 'canvas' },
+    { type: 'code_block' as any, icon: 'code_blocks', label: 'Code Snippet', category: 'canvas' },
   ];
 
   return (
@@ -598,7 +903,7 @@ export default function WritePage() {
           <Link href="/feed" className="font-headline-lg text-xl font-bold text-on-surface tracking-tight hover:opacity-90">
             Writen
           </Link>
-          {/* Dynamic Sync Status Indicator */}
+          
           {syncStatus === 'idle' && (
             <span className="font-label-caps text-xs text-on-surface-variant px-2.5 py-0.5 bg-surface-container rounded-md border border-outline-variant/10 select-none">
               Draft
@@ -634,7 +939,7 @@ export default function WritePage() {
           <button
             onClick={handlePublish}
             disabled={publishing}
-            className="bg-primary text-on-primary font-label-caps text-xs px-5 py-2 rounded-full hover:bg-primary-container hover:text-on-primary-container transition-all active:scale-95 disabled:opacity-60 flex items-center gap-2 shadow-sm font-semibold animate-none"
+            className="bg-primary text-on-primary font-label-caps text-xs px-5 py-2 rounded-full hover:bg-primary-container hover:text-on-primary-container transition-all active:scale-95 disabled:opacity-60 flex items-center gap-2 shadow-sm font-semibold animate-none cursor-pointer"
           >
             {publishing ? (
               <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
@@ -642,18 +947,17 @@ export default function WritePage() {
             Publish
           </button>
           
-          {/* More Actions Dropdown Menu */}
           <div className="relative" ref={moreMenuRef}>
             <button
               onClick={() => setShowMoreMenu(!showMoreMenu)}
-              className="p-2 text-on-surface-variant hover:bg-surface-container-low rounded-full transition-colors cursor-pointer active:scale-95 transition-transform"
+              className="p-2 text-on-surface-variant hover:bg-surface-container-low rounded-full transition-colors cursor-pointer active:scale-95"
               title="More Actions"
             >
               <span className="material-symbols-outlined text-[20px]">more_horiz</span>
             </button>
 
             {showMoreMenu && (
-              <div className="absolute right-0 top-11 w-48 bg-surface-container-lowest border border-outline-variant/30 rounded-xl shadow-lg py-2 animate-in fade-in slide-in-from-top-2 duration-200 z-50">
+              <div className="absolute right-0 top-11 w-48 bg-surface-container-lowest border border-outline-variant/30 rounded-xl shadow-lg py-2 animate-in fade-in slide-in-from-top-2 duration-200 z-50 animate-none">
                 <Link
                   href="/feed"
                   onClick={() => setShowMoreMenu(false)}
@@ -698,7 +1002,6 @@ export default function WritePage() {
 
       {/* ── Main Canvas ── */}
       <main className="flex-1 max-w-[720px] w-full mx-auto px-6 py-12 flex flex-col relative">
-        {/* Connection/Submit Errors */}
         {errors.submit && (
           <div className="mb-6 p-4 bg-error-container/20 border border-error/30 rounded-xl flex items-start gap-3">
             <span className="material-symbols-outlined text-error text-[20px] shrink-0 mt-0.5">error</span>
@@ -706,7 +1009,7 @@ export default function WritePage() {
           </div>
         )}
 
-        {/* Title Input Block (Fixed) */}
+        {/* Title Input Block */}
         <div className="mb-4">
           <input
             ref={titleInputRef}
@@ -726,8 +1029,8 @@ export default function WritePage() {
           {errors.title && <p className="text-error text-xs font-medium mt-1">{errors.title}</p>}
         </div>
 
-        {/* ── Active Blocks List (Dynamic) ── */}
-        <div className="space-y-6">
+        {/* ── metadata configurations list ── */}
+        <div className="space-y-6 mb-8">
           {activeBlocks.map((block) => {
             let blockIcon = 'circle';
             let blockLabel = 'Block';
@@ -743,7 +1046,7 @@ export default function WritePage() {
                       <SelectValue placeholder="Choose a technical category for this post" />
                     </SelectTrigger>
                     <SelectContent>
-                      {CATEGORIES.map(cat => (
+                      {categoriesList.map(cat => (
                         <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                       ))}
                     </SelectContent>
@@ -753,38 +1056,14 @@ export default function WritePage() {
               );
             } else if (block === 'coverImage') {
               blockIcon = 'image';
-              blockLabel = 'Featured Cover Image';
+              blockLabel = 'Featured Cover Image (Upload or Pasted URL)';
               blockContent = (
-                <div className="space-y-3">
-                  <div className="relative">
-                    <Input
-                      id="input-coverImage"
-                      value={coverImage}
-                      onChange={(e) => { setCoverImage(e.target.value); if (errors.coverImage) setErrors(prev => ({ ...prev, coverImage: '' })); }}
-                      placeholder="Paste a direct image URL (e.g. from Unsplash)..."
-                      className="bg-surface-container-lowest border-outline-variant/40 font-body-md pr-10 h-11 rounded-lg focus:border-primary focus:ring-1 focus:ring-primary"
-                    />
-                    <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">image</span>
-                  </div>
-                  {errors.coverImage && <p className="text-error text-xs font-medium">{errors.coverImage}</p>}
-                  
-                  {/* Live aspect ratio preview */}
-                  <div className="aspect-video rounded-xl overflow-hidden border border-outline-variant/20 bg-surface-container flex items-center justify-center relative group">
-                    {coverImage ? (
-                      <img
-                        src={coverImage}
-                        alt="Cover preview"
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-102"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                      />
-                    ) : (
-                      <div className="p-4 text-on-surface-variant/50 flex flex-col items-center gap-1">
-                        <span className="material-symbols-outlined text-[30px] text-outline-variant">add_photo_alternate</span>
-                        <span className="text-xs">Live aspect-ratio cover preview</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <DualImageUploader
+                  value={coverImage}
+                  onChange={(url) => { setCoverImage(url); if (errors.coverImage) setErrors(prev => ({ ...prev, coverImage: '' })); }}
+                  token={accessToken}
+                  label="Featured Cover Preview"
+                />
               );
             } else if (block === 'excerpt') {
               blockIcon = 'description';
@@ -839,41 +1118,153 @@ export default function WritePage() {
                   )}
                 </div>
               );
-            } else if (block === 'content') {
-              blockIcon = 'edit_note';
-              blockLabel = 'Rich Text Workspace';
-              blockContent = (
-                <div className="space-y-2">
-                  {errors.content && <p className="text-error text-xs font-medium mt-1">{errors.content}</p>}
-                  <div className="min-h-[40vh]">
-                    <RichEditor content={content} onChange={setContent} />
-                  </div>
-                </div>
-              );
             }
 
             return (
               <div 
                 key={block}
                 id={`block-card-${block}`}
-                className="relative group/block border border-outline-variant/15 hover:border-outline-variant/35 rounded-xl p-5 transition-all duration-300 bg-surface-container-lowest/40 hover:bg-surface-container-lowest shadow-sm"
+                className="relative group/block border border-outline-variant/15 hover:border-outline-variant/35 rounded-xl p-5 transition-all duration-300 bg-surface-container-lowest/40 hover:bg-surface-container-lowest shadow-sm animate-none"
               >
-                {/* Block Header Toolbar */}
                 <div className="flex items-center justify-between mb-4 pb-2 border-b border-outline-variant/10 opacity-70 group-hover/block:opacity-100 transition-opacity">
                   <span className="font-label-caps text-[10px] uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5 font-semibold">
                     <span className="material-symbols-outlined text-[15px] text-primary">{blockIcon}</span>
                     {blockLabel}
                   </span>
                   <button
-                    onClick={() => deleteBlock(block)}
-                    className="p-1 hover:bg-surface-container rounded-full text-on-surface-variant hover:text-error transition-all opacity-0 group-hover/block:opacity-100 active:scale-90"
-                    title={`Delete ${blockLabel} block`}
+                    onClick={() => deleteMetadataBlock(block)}
+                    className="p-1 hover:bg-surface-container rounded-full text-on-surface-variant hover:text-error transition-all opacity-0 group-hover/block:opacity-100 active:scale-90 cursor-pointer"
+                    title={`Delete ${blockLabel}`}
                   >
                     <span className="material-symbols-outlined text-[16px]">close</span>
                   </button>
                 </div>
+                {blockContent}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* ── DYNAMIC CONTENT CANVAS BLOCKS (Notion-Style reorderable canvas) ── */}
+        <div id="canvas-container" className="space-y-6">
+          {errors.canvas && <p className="text-error text-xs font-semibold pb-2">{errors.canvas}</p>}
+
+          {canvasBlocks.map((block, index) => {
+              let blockIcon = 'edit_note';
+              let blockLabel = 'Rich Text Editor';
+              let blockContent = null;
+
+            if (block.type === 'content') {
+              blockIcon = 'edit_note';
+              blockLabel = `Rich Editor Block #${index + 1}`;
+              blockContent = (
+                <div className="min-h-[40vh]">
+                  <RichEditor
+                    content={block.value}
+                    onChange={(val) => updateCanvasBlock(block.id, { value: val })}
+                  />
+                </div>
+              );
+            } else if (block.type === 'image_block') {
+              blockIcon = 'add_photo_alternate';
+              blockLabel = `Inline Image Block #${index + 1}`;
+              blockContent = (
+                <div className="space-y-4">
+                  {errors[`block_${block.id}`] && (
+                    <p className="text-error text-xs font-semibold">{errors[`block_${block.id}`]}</p>
+                  )}
+                  
+                  {/* Reuse of reusable dual-uploader */}
+                  <DualImageUploader
+                    value={block.value}
+                    onChange={(url) => updateCanvasBlock(block.id, { value: url })}
+                    token={accessToken}
+                    label={`Inline Image #${index + 1}`}
+                  />
+                  
+                  <div className="space-y-1 pt-1">
+                    <Label htmlFor={`caption-${block.id}`} className="font-label-caps text-[10px] text-on-surface-variant uppercase font-semibold block">Image Caption (Optional)</Label>
+                    <Input
+                      id={`caption-${block.id}`}
+                      value={block.caption || ''}
+                      onChange={(e) => updateCanvasBlock(block.id, { caption: e.target.value })}
+                      placeholder="Write description caption for this image..."
+                      className="bg-surface-container-lowest border-outline-variant/40 font-body-md h-10 rounded-lg focus:border-primary"
+                    />
+                  </div>
+                </div>
+              );
+            } else if (block.type === 'code_block') {
+              blockIcon = 'code_blocks';
+              blockLabel = `Code Editor Block #${index + 1}`;
+              blockContent = (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <span className="font-label-caps text-[10px] text-on-surface-variant uppercase font-semibold">Language:</span>
+                    <select
+                      value={block.language || 'javascript'}
+                      onChange={(e) => updateCanvasBlock(block.id, { language: e.target.value })}
+                      className="bg-surface-container-lowest border border-outline-variant/40 text-xs px-3 py-1.5 rounded-lg focus:outline-none focus:border-primary font-medium"
+                    >
+                      {['javascript', 'typescript', 'html', 'css', 'python', 'java', 'cpp', 'rust', 'go', 'bash', 'json', 'sql'].map(lang => (
+                        <option key={lang} value={lang}>{lang.toUpperCase()}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <textarea
+                    value={block.value}
+                    onChange={(e) => updateCanvasBlock(block.id, { value: e.target.value })}
+                    placeholder="Paste or write your code snippet here..."
+                    rows={8}
+                    className="w-full bg-surface-container-low font-mono text-sm p-4 rounded-lg focus:outline-none border border-outline-variant/30 focus:border-primary/50 text-on-surface leading-relaxed resize-y"
+                  />
+                </div>
+              );
+            }
+
+            return (
+              <div 
+                key={block.id}
+                className="relative group/block border border-outline-variant/15 hover:border-outline-variant/35 rounded-xl p-5 transition-all duration-300 bg-surface-container-lowest/40 hover:bg-surface-container-lowest shadow-sm"
+              >
+                {/* Block Canvas Header Actions toolbar */}
+                <div className="flex items-center justify-between mb-4 pb-2 border-b border-outline-variant/10 opacity-70 group-hover/block:opacity-100 transition-opacity">
+                  <span className="font-label-caps text-[10px] uppercase tracking-wider text-on-surface-variant flex items-center gap-1.5 font-semibold select-none">
+                    <span className="material-symbols-outlined text-[15px] text-primary">{blockIcon}</span>
+                    {blockLabel}
+                  </span>
+                  
+                  <div className="flex items-center gap-1.5 opacity-0 group-hover/block:opacity-100 transition-opacity">
+                    <button
+                      type="button"
+                      disabled={index === 0}
+                      onClick={() => moveCanvasBlock(index, 'up')}
+                      className="p-1 hover:bg-surface-container rounded-full text-on-surface-variant hover:text-primary transition-all disabled:opacity-30 cursor-pointer"
+                      title="Move Block Up"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">arrow_upward</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={index === canvasBlocks.length - 1}
+                      onClick={() => moveCanvasBlock(index, 'down')}
+                      className="p-1 hover:bg-surface-container rounded-full text-on-surface-variant hover:text-primary transition-all disabled:opacity-30 cursor-pointer"
+                      title="Move Block Down"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">arrow_downward</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => deleteCanvasBlock(block.id)}
+                      className="p-1 hover:bg-surface-container rounded-full text-on-surface-variant hover:text-error transition-all cursor-pointer"
+                      title="Delete Block"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">close</span>
+                    </button>
+                  </div>
+                </div>
                 
-                {/* Block Content */}
                 {blockContent}
               </div>
             );
@@ -881,11 +1272,11 @@ export default function WritePage() {
         </div>
 
         {/* ── Block Addition Insert Bar (Clean Left Gutter Alignment) ── */}
-        <div className="flex items-center gap-4 relative py-6 -ml-[44px] md:-ml-[48px] -ml-[8px] z-30">
+        <div className="flex items-center gap-4 relative py-8 -ml-[44px] md:-ml-[48px] -ml-[8px] z-30">
           <button
             onClick={() => setShowToolbar(!showToolbar)}
             title={showToolbar ? "Close options" : "Add block"}
-            className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 shadow-sm active:scale-95 shrink-0 z-10 ${
+            className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all duration-300 shadow-sm active:scale-95 shrink-0 z-10 cursor-pointer ${
               showToolbar 
                 ? 'rotate-45 bg-surface-container border-outline text-on-surface' 
                 : 'bg-surface-container-lowest border-outline-variant/40 text-on-surface-variant hover:text-on-surface hover:border-outline-variant'
@@ -900,14 +1291,21 @@ export default function WritePage() {
             }`}
           >
             {insertOptions.map((opt) => {
-              const isActive = activeBlocks.includes(opt.type);
+              const isMetadata = opt.category === 'metadata';
+              const isAdded = isMetadata ? activeBlocks.includes(opt.type) : false;
 
               return (
                 <div key={opt.type} className="relative group">
                   <button
-                    onClick={() => handleBlockAction(opt.type)}
-                    className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all shadow-sm active:scale-90 ${
-                      isActive 
+                    onClick={() => {
+                      if (isMetadata) {
+                        handleMetadataBlockAction(opt.type);
+                      } else {
+                        addCanvasBlock(opt.type);
+                      }
+                    }}
+                    className={`w-10 h-10 rounded-full border flex items-center justify-center transition-all shadow-sm active:scale-90 cursor-pointer ${
+                      isAdded 
                         ? 'border-primary/45 bg-primary/5 text-primary' 
                         : 'border-outline-variant/30 bg-surface-container-lowest text-on-surface-variant hover:text-primary hover:border-primary/50 hover:bg-primary/5'
                     }`}
@@ -915,9 +1313,9 @@ export default function WritePage() {
                     <span className="material-symbols-outlined text-[20px]">{opt.icon}</span>
                   </button>
                   
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 scale-90 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all pointer-events-none z-50">
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 scale-90 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all pointer-events-none z-50 animate-none">
                     <div className="bg-inverse-surface text-inverse-on-surface font-label-caps text-[10px] tracking-wider px-2.5 py-1 rounded shadow-md whitespace-nowrap uppercase">
-                      {opt.label} {isActive ? '(Added)' : ''}
+                      {opt.label} {isAdded ? '(Added)' : ''}
                     </div>
                   </div>
                 </div>
@@ -926,12 +1324,11 @@ export default function WritePage() {
           </div>
         </div>
 
-        {/* ── Mandatory Block Validation Summary (Visual Checklist) ── */}
         {Object.keys(errors).some(k => k.startsWith('block_')) && (
           <div className="my-6 p-4 bg-error-container/20 border border-error/20 rounded-xl space-y-2">
             <p className="text-xs uppercase font-label-caps text-error tracking-wider font-semibold flex items-center gap-1.5">
               <span className="material-symbols-outlined text-[16px]">warning</span>
-              Missing Mandatory Elements
+              Missing or Invalid Elements
             </p>
             <ul className="text-xs text-on-surface-variant space-y-1 pl-4 list-disc font-body-md">
               {Object.keys(errors).map((k) => {
@@ -946,10 +1343,9 @@ export default function WritePage() {
 
       </main>
 
-      {/* ─── 🚀 FULL SCREEN READER PREVIEW OVERLAY ─── */}
+      {/* ───🚀 FULL SCREEN DYNAMIC PREVIEW OVERLAY ─── */}
       {showPreview && createdPost && (
         <div className="fixed inset-0 z-[100] bg-surface overflow-y-auto flex flex-col animate-in fade-in slide-in-from-bottom-6 duration-300">
-          {/* Preview Navigation Header */}
           <header className="sticky top-0 bg-surface/90 backdrop-blur-md border-b border-outline-variant/20 px-6 py-4 flex justify-between items-center z-10 w-full">
             <div className="flex items-center gap-2 text-on-surface">
               <span className="material-symbols-outlined text-primary text-[20px]">visibility</span>
@@ -959,13 +1355,13 @@ export default function WritePage() {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowPreview(false)}
-                className="font-label-caps text-xs text-on-surface-variant hover:text-on-surface px-4 py-2.5 rounded-full border border-outline-variant/30 hover:bg-surface-container-low transition-all"
+                className="font-label-caps text-xs text-on-surface-variant hover:text-on-surface px-4 py-2.5 rounded-full border border-outline-variant/30 hover:bg-surface-container-low transition-all cursor-pointer"
               >
                 Go Back & Edit
               </button>
               <button
                 onClick={() => router.push('/feed')}
-                className="bg-primary text-on-primary font-label-caps text-xs px-6 py-2.5 rounded-full hover:bg-primary-container hover:text-on-primary-container transition-all active:scale-95 shadow-sm font-semibold flex items-center gap-1.5"
+                className="bg-primary text-on-primary font-label-caps text-xs px-6 py-2.5 rounded-full hover:bg-primary-container hover:text-on-primary-container transition-all active:scale-95 shadow-sm font-semibold flex items-center gap-1.5 cursor-pointer"
               >
                 Finish & Exit
                 <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
@@ -973,9 +1369,7 @@ export default function WritePage() {
             </div>
           </header>
 
-          {/* Reader View Content Wrapper */}
           <article className="max-w-[720px] w-full mx-auto px-6 py-12 flex flex-col">
-            {/* Category Tag pill */}
             {category && (
               <div className="mb-4">
                 <span className="px-3.5 py-1 bg-primary/10 text-primary text-xs font-label-caps border border-primary/20 rounded-full font-semibold">
@@ -984,12 +1378,10 @@ export default function WritePage() {
               </div>
             )}
 
-            {/* Title */}
             <h1 className="font-display-xl text-4xl md:text-5xl font-bold text-on-surface leading-tight mb-6">
               {title}
             </h1>
 
-            {/* Author details block */}
             <div className="flex items-center gap-3 mb-8 pb-6 border-b border-outline-variant/15">
               <div className="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center overflow-hidden border border-outline-variant/30">
                 {user?.avatar ? (
@@ -1008,14 +1400,12 @@ export default function WritePage() {
               </div>
             </div>
 
-            {/* Excerpt panel */}
             {excerpt && (
               <div className="mb-8 p-5 bg-surface-container-low border-l-4 border-primary rounded-r-xl italic font-serif text-on-surface-variant text-base leading-relaxed">
                 "{excerpt}"
               </div>
             )}
 
-            {/* Featured Cover Image */}
             {coverImage && (
               <div className="mb-10 aspect-video rounded-xl overflow-hidden border border-outline-variant/20 shadow-md">
                 <img
@@ -1026,13 +1416,12 @@ export default function WritePage() {
               </div>
             )}
 
-            {/* TipTap Rich HTML Content */}
+            {/* Compiled HTML preview */}
             <div 
               className="tiptap font-serif leading-relaxed text-on-surface text-lg md:text-xl space-y-6"
-              dangerouslySetInnerHTML={{ __html: content }}
+              dangerouslySetInnerHTML={{ __html: compileCanvasBlocks(canvasBlocks) }}
             />
 
-            {/* Keywords/SEO tag chips list */}
             {keywordChips.length > 0 && (
               <div className="mt-12 pt-6 border-t border-outline-variant/15 flex flex-wrap gap-2">
                 {keywordChips.map((chip, i) => (
@@ -1046,7 +1435,6 @@ export default function WritePage() {
                 ))}
               </div>
             )}
-
           </article>
         </div>
       )}

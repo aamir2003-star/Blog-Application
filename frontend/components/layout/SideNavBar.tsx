@@ -53,9 +53,9 @@ export default function SideNavBar() {
 
       {/* Responsive Navigation Sidebar/Drawer */}
       <nav
-        className={`fixed md:sticky top-0 md:top-[57px] left-0 h-full md:h-[calc(100vh-57px)] border-r border-outline-variant/30 py-6 md:py-4 px-4 md:px-3 bg-surface transition-all duration-300 ease-in-out overflow-hidden flex flex-col justify-between z-50 md:z-30 shadow-2xl md:shadow-none ${
+        className={`fixed md:sticky top-0 md:top-[57px] left-0 h-full md:h-[calc(100vh-57px)] border-r border-outline-variant/30 py-6 md:py-4 px-4 md:px-3 bg-surface transition-all duration-[450ms] ease-in-out overflow-hidden flex flex-col justify-between z-50 md:z-30 shadow-2xl md:shadow-none ${
           sidebarOpen
-            ? 'w-[240px] md:w-[220px] translate-x-0 opacity-100 pointer-events-auto'
+            ? 'w-[240px] md:w-[180px] translate-x-0 opacity-100 pointer-events-auto'
             : 'w-[240px] md:w-0 -translate-x-full md:translate-x-0 md:border-r-0 md:opacity-0 md:px-0 md:pointer-events-none'
         }`}
       >

@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Post, { PREDEFINED_CATEGORIES } from '../models/Post.model.js';
 import User from '../models/User.model.js';
 import { generateUniqueSlug } from '../utils/slug.utils.js';
@@ -73,7 +74,7 @@ const assertOwnership = async (postId, userId) => {
  */
 export const getAllPublished = async (req, res) => {
   const { page, limit, skip } = parsePagination(req.query);
-  const { category, search } = req.query;
+  const { category, search, sort } = req.query;
 
   // Build filter — only show PUBLISHED posts to the public
   const filter = { status: 'PUBLISHED' };
@@ -89,10 +90,17 @@ export const getAllPublished = async (req, res) => {
     ];
   }
 
+  const sortObj = {};
+  if (sort === 'views') {
+    sortObj.views = -1;
+  } else {
+    sortObj.createdAt = -1;
+  }
+
   const [posts, total] = await Promise.all([
     Post.find(filter)
       .populate('authorId', 'name avatar') // Only expose public author fields
-      .sort({ createdAt: -1 })
+      .sort(sortObj)
       .skip(skip)
       .limit(limit)
       .lean(),
@@ -144,7 +152,11 @@ export const getCategories = async (_req, res) => {
 export const getBySlug = async (req, res) => {
   const { slug } = req.params;
 
-  const post = await Post.findOne({ slug })
+  // Resolve post by either _id (if valid ObjectId) or slug (for human-readable URLs)
+  const isObjectId = mongoose.isValidObjectId(slug);
+  const query = isObjectId ? { _id: slug } : { slug };
+
+  const post = await Post.findOne(query)
     .populate('authorId', 'name avatar role')
     .lean();
 
@@ -185,7 +197,35 @@ export const getMyPosts = async (req, res) => {
   const { page, limit, skip } = parsePagination(req.query);
   const { status } = req.query; // Optional: filter by DRAFT or PUBLISHED
 
-  const filter = { authorId: req.user._id };
+  // Dashboard filter to exclude "completely empty" drafts.
+  // A draft is empty if it has only default placeholders and empty values.
+  // We want to fetch drafts only if they are NON-EMPTY, or if the status is PUBLISHED.
+  const filter = { 
+    authorId: req.user._id,
+    $or: [
+      { status: 'PUBLISHED' },
+      {
+        status: 'DRAFT',
+        $or: [
+          { title: { $nin: ['Untitled Draft', 'Untitled', '', null] } },
+          { coverImage: { $nin: ['', null] } },
+          { seoKeywords: { $ne: '' } },
+          { excerpt: { $nin: ['Draft excerpt...', '', null] } },
+          { category: { $nin: ['Other', '', null] } },
+          {
+            $and: [
+              { htmlContent: { $exists: true } },
+              { htmlContent: { $nin: ['', '<p></p>', null] } },
+              { htmlContent: { $not: /^(<!--[^>]*-->|\s|<p>\s*<\/p>)*$/ } }
+            ]
+          }
+        ]
+      }
+    ]
+  };
+
+  // If a specific status filter is requested by query parameter (e.g. status=DRAFT),
+  // we combine it with our dashboard filter condition.
   if (status && ['DRAFT', 'PUBLISHED'].includes(status.toUpperCase())) {
     filter.status = status.toUpperCase();
   }
@@ -199,7 +239,7 @@ export const getMyPosts = async (req, res) => {
       .lean(),
     Post.countDocuments(filter),
     Post.aggregate([
-      { $match: { authorId: req.user._id } },
+      { $match: filter },
       {
         $group: {
           _id: null,

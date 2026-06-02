@@ -196,7 +196,7 @@ export default function CreatorDashboard() {
         <SideNavBar />
 
         {/* Wider Canvas optimized for portfolio data lists */}
-        <div className="flex-1 flex justify-center px-6 py-10 md:px-8">
+        <div className="flex-1 flex justify-center pl-16 pr-6 py-10 md:pl-16 md:pr-8 transition-all duration-[450ms] ease-in-out">
           <main className="flex-1 max-w-[1000px] w-full flex flex-col gap-8 min-h-[calc(100vh-57px)]">
             
             {/* Header section */}
