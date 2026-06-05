@@ -84,10 +84,10 @@ export default function LibraryPage() {
     <div className="min-h-screen bg-surface flex flex-col font-body-md text-on-surface">
       <TopNavBar />
 
-      <div className="flex-1 flex w-full">
+      <div className="flex-1 w-full max-w-[1280px] md:w-[80%] mx-auto flex gap-6 md:gap-10 px-4 md:px-6">
         <SideNavBar />
 
-        <div className="flex-1 flex justify-center pl-16 pr-6 py-10 md:pl-16 md:pr-8 transition-all duration-[450ms] ease-in-out">
+        <div className="flex-1 flex justify-center py-10 transition-all duration-[450ms] ease-in-out">
           <main className="flex-1 max-w-[800px] w-full flex flex-col min-h-[calc(100vh-57px)]">
             {error && (
               <div className="mb-6 p-4 bg-error-container/20 border border-error/30 rounded-xl flex items-start gap-3 select-none">
@@ -198,7 +198,7 @@ export default function LibraryPage() {
                             </div>
 
                             {post.coverImage && (
-                              <div className="w-[120px] h-[80px] rounded-lg overflow-hidden border border-outline-variant/20 shrink-0 select-none">
+                              <div className="w-[120px] h-[80px] hidden sm:block rounded-lg overflow-hidden border border-outline-variant/20 shrink-0 select-none">
                                 <img
                                   src={post.coverImage}
                                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"

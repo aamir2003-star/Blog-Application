@@ -103,19 +103,26 @@ export default function PostDetailPage({ params }: PageProps) {
     <div className="min-h-screen bg-surface flex flex-col font-body-md text-on-surface">
       <TopNavBar />
       
-      <div className="flex-1 flex w-full">
+      <div className="flex-1 w-full max-w-[1280px] md:w-[80%] mx-auto flex gap-6 md:gap-10 px-4 md:px-6">
         <SideNavBar />
         
-        <main className="flex-1 flex justify-center py-10 pl-16 pr-margin-mobile md:pl-16 md:pr-margin-desktop relative transition-all duration-[450ms] ease-in-out">
+        <main className="flex-1 flex justify-center py-10 relative transition-all duration-[450ms] ease-in-out">
           <Link 
             href="/feed" 
-            className="absolute top-8 left-8 md:top-10 md:left-12 flex items-center gap-2 font-label-caps text-sm text-secondary hover:text-on-surface transition-colors cursor-pointer border-none bg-transparent"
+            className="absolute hidden md:flex top-8 left-8 md:top-10 md:left-12 items-center gap-2 font-label-caps text-sm text-secondary hover:text-on-surface transition-colors cursor-pointer border-none bg-transparent"
           >
             <span className="material-symbols-outlined text-sm">arrow_back</span>
             Back to Feed
           </Link>
 
-          <div className="w-full max-w-[720px] space-y-8 pt-10">
+          <div className="w-full max-w-[720px] space-y-8 pt-6 md:pt-10">
+            <Link 
+              href="/feed" 
+              className="flex md:hidden items-center gap-2 font-label-caps text-sm text-secondary hover:text-on-surface transition-colors cursor-pointer border-none bg-transparent mb-4 w-fit"
+            >
+              <span className="material-symbols-outlined text-sm">arrow_back</span>
+              Back to Feed
+            </Link>
             {loading ? (
               <div className="space-y-6 animate-pulse py-12">
                 <div className="h-4 bg-outline-variant/30 rounded w-16"></div>

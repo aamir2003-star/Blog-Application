@@ -178,7 +178,7 @@ export default function RegisterPage() {
         <span className="material-symbols-outlined text-sm">arrow_back</span>
         Go back to Home
       </Link>
-      <div className="w-full max-w-[480px] space-y-unit * 6">
+      <div className="w-full max-w-[480px] space-y-6">
         
         <div className="bg-surface-container-lowest border border-outline-variant/50 rounded-lg p-8 md:p-12 editorial-shadow relative z-10">
           

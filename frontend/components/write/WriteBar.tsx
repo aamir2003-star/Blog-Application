@@ -38,48 +38,49 @@ export default function WriteBar({
   }, [showMoreMenu]);
 
   return (
-    <header className="sticky top-0 z-40 bg-surface/95 backdrop-blur-md border-b border-outline-variant/20 px-6 py-3 flex justify-between items-center select-none">
-      <div className="flex items-center gap-4">
-        <Link href="/feed" className="font-headline-lg text-xl font-bold text-on-surface tracking-tight hover:opacity-90 decoration-none">
+    <header className="sticky top-0 z-40 bg-surface/95 backdrop-blur-md border-b border-outline-variant/20 px-4 sm:px-6 py-3 flex justify-between items-center select-none">
+      <div className="flex items-center gap-3 sm:gap-4">
+        <Link href="/feed" className="font-headline-lg text-lg sm:text-xl font-bold text-on-surface tracking-tight hover:opacity-90 decoration-none">
           Writen
         </Link>
         
         {syncStatus === 'idle' && (
-          <span className="font-label-caps text-xs text-on-surface-variant px-2.5 py-0.5 bg-surface-container rounded-md border border-outline-variant/10 select-none">
-            Draft
+          <span className="font-label-caps text-xs text-on-surface-variant px-2 py-0.5 sm:px-2.5 bg-surface-container rounded-md border border-outline-variant/10 select-none flex items-center gap-1.5">
+            <span className="material-symbols-outlined text-[15px]">edit</span>
+            <span className="hidden sm:inline">Draft</span>
           </span>
         )}
         {syncStatus === 'saving' && (
-          <span className="font-label-caps text-xs text-on-surface-variant/80 px-2.5 py-0.5 bg-surface-container rounded-md border border-outline-variant/10 select-none flex items-center gap-1.5 animate-pulse">
+          <span className="font-label-caps text-xs text-on-surface-variant/80 px-2 py-0.5 sm:px-2.5 bg-surface-container rounded-md border border-outline-variant/10 select-none flex items-center gap-1.5 animate-pulse">
             <span className="material-symbols-outlined animate-spin text-[14px]">progress_activity</span>
-            Saving...
+            <span className="hidden sm:inline">Saving...</span>
           </span>
         )}
         {syncStatus === 'saved' && (
-          <span className="font-label-caps text-xs text-primary bg-primary/10 px-2.5 py-0.5 rounded-md border border-primary/20 select-none flex items-center gap-1.5 font-semibold">
+          <span className="font-label-caps text-xs text-primary bg-primary/10 px-2 py-0.5 sm:px-2.5 rounded-md border border-primary/20 select-none flex items-center gap-1.5 font-semibold">
             <span className="material-symbols-outlined text-[15px]">cloud_done</span>
-            Saved to cloud
+            <span className="hidden sm:inline">Saved to cloud</span>
           </span>
         )}
         {syncStatus === 'offline_saved' && (
-          <span className="font-label-caps text-xs text-tertiary bg-tertiary/10 px-2.5 py-0.5 rounded-md border border-tertiary/20 select-none flex items-center gap-1.5 font-semibold">
+          <span className="font-label-caps text-xs text-tertiary bg-tertiary/10 px-2 py-0.5 sm:px-2.5 rounded-md border border-tertiary/20 select-none flex items-center gap-1.5 font-semibold">
             <span className="material-symbols-outlined text-[15px]">offline_pin</span>
-            Saved locally (offline)
+            <span className="hidden sm:inline">Saved locally (offline)</span>
           </span>
         )}
         {syncStatus === 'error' && (
-          <span className="font-label-caps text-xs text-error bg-error/10 px-2.5 py-0.5 rounded-md border border-error/20 select-none flex items-center gap-1.5 font-semibold">
+          <span className="font-label-caps text-xs text-error bg-error/10 px-2 py-0.5 sm:px-2.5 rounded-md border border-error/20 select-none flex items-center gap-1.5 font-semibold">
             <span className="material-symbols-outlined text-[15px]">warning</span>
-            Save failed
+            <span className="hidden sm:inline">Save failed</span>
           </span>
         )}
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
         <button
           onClick={onPublish}
           disabled={publishing || loadingPost}
-          className="bg-primary text-on-primary font-label-caps text-xs px-5 py-2 rounded-full hover:bg-primary-container hover:text-on-primary-container transition-all active:scale-95 disabled:opacity-60 flex items-center gap-2 shadow-sm font-semibold border-none cursor-pointer"
+          className="bg-primary text-on-primary font-label-caps text-xs px-4 sm:px-5 py-2 rounded-full hover:bg-primary-container hover:text-on-primary-container transition-all active:scale-95 disabled:opacity-60 flex items-center gap-1.5 sm:gap-2 shadow-sm font-semibold border-none cursor-pointer"
         >
           {publishing ? (
             <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
@@ -133,9 +134,6 @@ export default function WriteBar({
             </div>
           )}
         </div>
-        <button className="p-2 text-on-surface-variant hover:bg-surface-container-low rounded-full transition-colors bg-transparent border-none cursor-pointer">
-          <span className="material-symbols-outlined text-[20px]">notifications</span>
-        </button>
         {user && <ProfileDropdown />}
       </div>
     </header>

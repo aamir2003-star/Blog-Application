@@ -24,9 +24,18 @@ export default function DashboardHeader({
         </p>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
         {viewMode === 'active' ? (
           <>
+            <Link
+              href="/feed"
+              className="border border-outline-variant/35 text-on-surface font-label-caps text-xs px-5 py-2.5 rounded-full hover:bg-surface-container-low hover:text-primary transition-all active:scale-95 shadow-sm font-semibold flex items-center gap-1.5 decoration-none"
+              title="Exit dashboard and go to home feed"
+            >
+              <span className="material-symbols-outlined text-[17px]">home</span>
+              Home
+            </Link>
+
             <button
               onClick={() => setViewMode('trash')}
               className="border border-outline-variant/35 text-on-surface font-label-caps text-xs px-5 py-2.5 rounded-full hover:bg-surface-container-low hover:text-primary transition-all active:scale-95 shadow-sm font-semibold flex items-center gap-1.5 cursor-pointer focus:outline-none bg-transparent"

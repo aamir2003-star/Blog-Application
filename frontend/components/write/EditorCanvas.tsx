@@ -115,7 +115,7 @@ export default function EditorCanvas({
       })}
 
       {/* ── Block Addition Insert Bar (Clean Left Gutter Alignment) ── */}
-      <div className="flex items-center gap-4 relative py-8 -ml-[44px] md:-ml-[48px] -ml-[8px] z-30 select-none">
+      <div className="flex items-center gap-4 relative py-8 -ml-1 md:-ml-[48px] z-30 select-none">
         <button
           onClick={() => setShowToolbar(!showToolbar)}
           title={showToolbar ? 'Close options' : 'Add block'}
@@ -129,7 +129,7 @@ export default function EditorCanvas({
         </button>
 
         <div
-          className={`flex items-center gap-2.5 transition-all duration-300 origin-left ${
+          className={`flex flex-wrap items-center gap-2 max-w-[calc(100vw-80px)] sm:max-w-none transition-all duration-300 origin-left ${
             showToolbar ? 'opacity-100 translate-x-0 scale-100' : 'opacity-0 -translate-x-4 scale-95 pointer-events-none'
           }`}
         >

@@ -27,7 +27,7 @@ export default function LandingPage() {
   if (loading) return null; // Avoid flashing content before redirect
 
   return (
-    <div className="h-screen flex flex-col bg-surface overflow-hidden selection:bg-primary-container selection:text-on-primary-container relative">
+    <div className="min-h-screen flex flex-col bg-surface selection:bg-primary-container selection:text-on-primary-container relative">
       {/* Decorative Grid Mesh Background */}
       <div 
         className="absolute inset-0 pointer-events-none opacity-20 z-0"
@@ -63,7 +63,7 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <main className="flex-1 relative z-10 flex items-center pb-10">
+      <main className="flex-1 relative z-10 flex items-center py-10 sm:py-16">
         {/* Hero Section */}
         <section className="relative overflow-hidden w-full">
           <div 
@@ -72,15 +72,15 @@ export default function LandingPage() {
               background: 'radial-gradient(circle at 50% 50%, rgba(0, 109, 56, 0.05) 0%, rgba(249, 249, 247, 0) 70%)'
             }}
           />
-          <div className="max-w-[1280px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-1000 fill-mode-both">
-              <h1 className="font-headline-lg md:font-display-xl text-5xl md:text-6xl font-bold text-on-surface max-w-2xl leading-[1.1] tracking-tight">
+          <div className="max-w-[1280px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-1000 fill-mode-both">
+              <h1 className="font-headline-lg md:font-display-xl text-4xl sm:text-5xl md:text-6xl font-bold text-on-surface max-w-2xl leading-[1.1] tracking-tight">
                 Human stories & ideas
               </h1>
-              <p className="font-headline-md text-2xl md:text-[28px] text-secondary max-w-xl italic font-medium">
+              <p className="font-headline-md text-xl sm:text-2xl md:text-[28px] text-secondary max-w-xl italic font-medium">
                 A place to read, write, and deepen your understanding of software craftsmanship.
               </p>
-              <Link href="/register" className="inline-block bg-on-surface text-surface font-body-lg text-lg px-10 py-4 rounded-full hover:opacity-90 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+              <Link href="/register" className="inline-block bg-on-surface text-surface font-body-lg text-base sm:text-lg px-8 sm:px-10 py-3.5 sm:py-4 rounded-full hover:opacity-90 transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
                 Start reading
               </Link>
             </div>
@@ -112,12 +112,12 @@ export default function LandingPage() {
       </main>
 
       {/* Minimal Footer */}
-      <footer className="absolute bottom-6 left-0 right-0 z-20 w-full animate-in fade-in duration-1000 delay-500 fill-mode-both">
+      <footer className="w-full mt-auto py-6 z-20 border-t border-outline-variant/10 animate-in fade-in duration-1000 delay-500 fill-mode-both">
         <div className="max-w-[1280px] mx-auto px-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="font-body-md text-sm text-secondary">
+          <p className="font-body-md text-sm text-secondary text-center sm:text-left">
             &copy; {new Date().getFullYear()} Created by Aamir
           </p>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center justify-center gap-6">
             <a href="https://github.com/aamir2003-star" target="_blank" rel="noopener noreferrer" className="font-body-md text-sm text-secondary hover:text-on-surface transition-colors">
               GitHub
             </a>
@@ -130,7 +130,6 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
-
     </div>
   );
 }

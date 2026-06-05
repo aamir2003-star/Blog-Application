@@ -31,7 +31,7 @@ function PostCardSkeleton() {
             </div>
           </div>
         </div>
-        <div className="w-[160px] h-[107px] hidden sm:block bg-outline-variant/30 rounded-lg shrink-0"></div>
+        <div className="w-[80px] h-[80px] xs:w-[120px] xs:h-[90px] sm:w-[160px] sm:h-[107px] bg-outline-variant/30 rounded-lg shrink-0"></div>
       </div>
       <div className="w-full h-px bg-outline-variant/10 pt-4"></div>
     </div>
@@ -58,6 +58,7 @@ function FeedPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const categoryParam = searchParams ? searchParams.get('category') : null;
+  const searchParam = searchParams ? searchParams.get('search') : null;
   const { sidebarOpen } = useUIStore();
 
   // Dynamic Tabs & Filter States
@@ -96,7 +97,7 @@ function FeedPageContent() {
     fetchCategories();
   }, []);
 
-  // Fetch Posts on Tab or Initial Load
+  // Fetch Posts on Tab, Search, or Initial Load
   const fetchPosts = async (pageNum: number, tabName: string, isAppend = false) => {
     if (pageNum === 1) {
       setLoading(true);
@@ -110,6 +111,10 @@ function FeedPageContent() {
       // Category filter query check (ignore For you & Following)
       if (tabName !== 'For you' && tabName !== 'Following') {
         url += `&category=${encodeURIComponent(tabName)}`;
+      }
+
+      if (searchParam) {
+        url += `&search=${encodeURIComponent(searchParam)}`;
       }
 
       const res = await fetch(url);
@@ -131,11 +136,11 @@ function FeedPageContent() {
     }
   };
 
-  // Reset page and trigger fetch on tab changes
+  // Reset page and trigger fetch on tab or search parameter changes
   useEffect(() => {
     fetchPosts(1, activeTab, false);
     setPage(1);
-  }, [activeTab]);
+  }, [activeTab, searchParam]);
 
   const handleLoadMore = () => {
     if (!hasNextPage || loadingMore) return;
@@ -145,11 +150,13 @@ function FeedPageContent() {
   };
 
   const handleTabChange = (tab: string) => {
+    const params = new URLSearchParams(searchParams ? searchParams.toString() : '');
     if (tab === 'For you') {
-      router.push('/feed');
+      params.delete('category');
     } else {
-      router.push(`/feed?category=${encodeURIComponent(tab)}`);
+      params.set('category', tab);
     }
+    router.push(`/feed?${params.toString()}`);
   };
 
   // Word-count reading estimator (200 words per minute rule)
@@ -179,14 +186,11 @@ function FeedPageContent() {
     <div className="min-h-screen bg-surface flex flex-col">
       <TopNavBar />
       
-      <div className="flex-1 flex w-full">
+      <div className="flex-1 w-full max-w-[1280px] md:w-[80%] mx-auto flex gap-6 md:gap-10 px-4 md:px-6">
         <SideNavBar />
         
-        <div className="flex-1 flex justify-center pl-16 w-full transition-all duration-[450ms] ease-in-out">
-          <main 
-            style={{ transform: sidebarOpen ? 'translateX(0)' : 'translateX(100px)' }}
-            className="flex-1 max-w-[800px] w-full min-h-[calc(100vh-57px)] transition-all duration-[450ms] ease-in-out"
-          >
+        <div className="flex-1 flex justify-center w-full">
+          <main className="flex-1 max-w-[800px] w-full min-h-[calc(100vh-57px)]">
             
             {/* Navigation Tabs Header */}
             <div className="sticky top-[57px] bg-surface/95 backdrop-blur z-40 border-b border-outline-variant/30 px-6 pt-6">
@@ -196,13 +200,13 @@ function FeedPageContent() {
                     key={tab}
                     onClick={() => handleTabChange(tab)}
                     className={`pb-4 whitespace-nowrap text-sm font-label-caps transition-colors relative cursor-pointer ${
-                      activeTab === tab 
+                      activeTab === tab && !searchParam
                         ? 'text-on-surface font-bold' 
                         : 'text-on-surface-variant hover:text-on-surface'
                     }`}
                   >
                     {tab}
-                    {activeTab === tab && (
+                    {activeTab === tab && !searchParam && (
                       <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full"></div>
                     )}
                   </button>
@@ -215,6 +219,24 @@ function FeedPageContent() {
                       onClick={() => handleTabChange('For you')}
                       className="p-0.5 hover:bg-primary/10 rounded-full transition-colors flex items-center justify-center cursor-pointer select-none text-primary border-none bg-transparent"
                       title="Clear topic filter"
+                    >
+                      <span className="material-symbols-outlined text-[15px] font-bold">close</span>
+                    </button>
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t-full"></div>
+                  </div>
+                )}
+
+                {searchParam && (
+                  <div className="pb-4 whitespace-nowrap text-sm font-label-caps relative flex items-center gap-1.5 text-primary font-bold animate-fade-in">
+                    <span>Search: "{searchParam}"</span>
+                    <button
+                      onClick={() => {
+                        const params = new URLSearchParams(searchParams ? searchParams.toString() : '');
+                        params.delete('search');
+                        router.push(`/feed?${params.toString()}`);
+                      }}
+                      className="p-0.5 hover:bg-primary/10 rounded-full transition-colors flex items-center justify-center cursor-pointer select-none text-primary border-none bg-transparent"
+                      title="Clear search filter"
                     >
                       <span className="material-symbols-outlined text-[15px] font-bold">close</span>
                     </button>
@@ -304,7 +326,7 @@ function FeedPageContent() {
                           </div>
                           
                           {post.coverImage && (
-                            <div className="w-[160px] h-[107px] hidden sm:block overflow-hidden rounded-lg border border-outline-variant/30 shrink-0">
+                            <div className="w-[80px] h-[80px] xs:w-[120px] xs:h-[90px] sm:w-[160px] sm:h-[107px] overflow-hidden rounded-lg border border-outline-variant/30 shrink-0 self-center sm:self-start">
                               <img src={post.coverImage} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Article Cover" />
                             </div>
                           )}

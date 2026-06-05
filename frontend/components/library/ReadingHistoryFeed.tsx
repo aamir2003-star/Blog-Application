@@ -173,7 +173,7 @@ export default function ReadingHistoryFeed({
                   <div className="flex items-center gap-4 shrink-0 select-none">
                     {/* Cover image thumbnail */}
                     {post.coverImage && (
-                      <div className="w-[120px] h-[80px] rounded-lg overflow-hidden border border-outline-variant/20 shrink-0 select-none">
+                      <div className="w-[120px] h-[80px] hidden sm:block rounded-lg overflow-hidden border border-outline-variant/20 shrink-0 select-none">
                         <img 
                           src={post.coverImage} 
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 

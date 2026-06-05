@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import TopNavBar from '@/components/layout/TopNavBar';
-import SideNavBar from '@/components/layout/SideNavBar';
 
 // Import custom React Query hooks
 import {
@@ -176,10 +175,8 @@ export default function CreatorDashboard() {
     <div className="min-h-screen bg-surface flex flex-col relative font-body-md text-on-surface">
       <TopNavBar />
 
-      <div className="w-full flex-1 flex">
-        <SideNavBar />
-
-        <div className="flex-1 flex justify-center pl-16 pr-6 py-10 md:pl-16 md:pr-8 transition-all duration-[450ms] ease-in-out">
+      <div className="flex-1 w-full max-w-[1280px] md:w-[80%] mx-auto flex px-4 md:px-6">
+        <div className="flex-1 flex justify-center py-10">
           <main className="flex-1 max-w-[1000px] w-full flex flex-col gap-8 min-h-[calc(100vh-57px)]">
             <DashboardHeader viewMode={viewMode} setViewMode={setViewMode} />
 
