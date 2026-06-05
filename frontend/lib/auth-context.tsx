@@ -16,6 +16,7 @@ export interface User {
   googleId: string | null;
   githubId: string | null;
   createdAt: string;
+  autoDeleteTrash?: boolean;
 }
 
 /** Slim snapshot stored in localStorage — only for displaying the popup */

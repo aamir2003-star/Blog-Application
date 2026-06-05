@@ -1,84 +1,109 @@
 'use client';
 
-import { use, useState, useEffect } from 'react';
+import { useEffect, use } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import TopNavBar from '@/components/layout/TopNavBar';
 import SideNavBar from '@/components/layout/SideNavBar';
+import ArticleContent from '@/components/feed/ArticleContent';
+import { usePostDetailQuery } from '@/hooks/usePosts';
+import { useToggleBookmarkMutation } from '@/hooks/useBookmarks';
+import { useRecordViewMutation, useRecordReadMutation } from '@/hooks/useAnalytics';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+interface PageProps {
+  params: Promise<{ slug: string }>;
+}
 
-export default function ArticleReaderPage({ params }: { params: Promise<{ slug: string }> }) {
+export default function PostDetailPage({ params }: PageProps) {
   const { slug } = use(params);
   const { accessToken } = useAuth();
 
-  const [post, setPost] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  // ── React Query Queries & Mutations ──
+  const { data: post, isLoading: loading, error } = usePostDetailQuery(slug, accessToken);
+  const toggleBookmarkMutation = useToggleBookmarkMutation(accessToken);
+  const recordViewMutation = useRecordViewMutation(accessToken);
+  const recordReadMutation = useRecordReadMutation(accessToken);
 
+  // ── Telemetry Effects (View & Read) ──
   useEffect(() => {
-    const fetchPost = async () => {
-      setLoading(true);
-      setError('');
-      try {
-        const headers: any = {};
-        if (accessToken) {
-          headers['Authorization'] = `Bearer ${accessToken}`;
-        }
-        const res = await fetch(`${API}/posts/${slug}`, { headers });
-        const data = await res.json();
-        
-        if (!res.ok) {
-          throw new Error(data.message || 'Failed to load article');
-        }
-        
-        if (data.success && data.data) {
-          setPost(data.data);
-        }
-      } catch (err: any) {
-        setError(err.message || 'Article not found');
-      } finally {
-        setLoading(false);
+    if (!post?._id) return;
+
+    // Generate or retrieve persistent visitor ID
+    let visitorId = localStorage.getItem('writen_visitor_uuid');
+    if (!visitorId) {
+      visitorId = typeof crypto?.randomUUID === 'function' 
+        ? crypto.randomUUID() 
+        : Math.random().toString(36).substring(2, 15);
+      localStorage.setItem('writen_visitor_uuid', visitorId);
+    }
+
+    // 1. Record page view on mount
+    recordViewMutation.mutate({ postId: post._id, visitorId });
+
+    // 2. Set up scroll listener and timer for read tracking
+    let secondsSpent = 0;
+    let maxScrollPercent = 0;
+    let hasRecordedRead = false;
+
+    const dispatchReadTelemetry = () => {
+      if (hasRecordedRead) return;
+      hasRecordedRead = true;
+      recordReadMutation.mutate({
+        postId: post._id,
+        visitorId,
+        timeSpent: secondsSpent,
+        scrollPercentage: Math.round(maxScrollPercent),
+      });
+    };
+
+    const checkThresholds = () => {
+      if (hasRecordedRead) return;
+      if (secondsSpent >= 30 || maxScrollPercent >= 70) {
+        dispatchReadTelemetry();
       }
     };
-    fetchPost();
-  }, [slug, accessToken]);
 
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
+    const onScroll = () => {
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const pct = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
+      if (pct > maxScrollPercent) {
+        maxScrollPercent = pct;
+      }
+      checkThresholds();
+    };
 
-  const getAvatarFallback = (name: string) => {
-    if (!name) return 'U';
-    return name.charAt(0).toUpperCase();
-  };
+    const interval = setInterval(() => {
+      secondsSpent += 1;
+      checkThresholds();
+    }, 1000);
 
-  const calculateReadingTime = (htmlStr: string) => {
-    if (!htmlStr) return 1;
-    const text = htmlStr.replace(/<\/?[^>]+(>|$)/g, '');
-    const words = text.trim().split(/\s+/).length;
-    const minutes = Math.ceil(words / 200);
-    return minutes || 1;
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('scroll', onScroll);
+    };
+  }, [post?._id]);
+
+  const handleToggleBookmark = () => {
+    if (post?._id) {
+      toggleBookmarkMutation.mutate(post._id);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-surface flex flex-col">
+    <div className="min-h-screen bg-surface flex flex-col font-body-md text-on-surface">
       <TopNavBar />
       
       <div className="flex-1 flex w-full">
         <SideNavBar />
         
         <main className="flex-1 flex justify-center py-10 pl-16 pr-margin-mobile md:pl-16 md:pr-margin-desktop relative transition-all duration-[450ms] ease-in-out">
-          {/* Floating Back Navigation Header */}
           <Link 
             href="/feed" 
-            className="absolute top-8 left-8 md:top-10 md:left-12 flex items-center gap-2 font-label-caps text-sm text-secondary hover:text-on-surface transition-colors cursor-pointer"
+            className="absolute top-8 left-8 md:top-10 md:left-12 flex items-center gap-2 font-label-caps text-sm text-secondary hover:text-on-surface transition-colors cursor-pointer border-none bg-transparent"
           >
             <span className="material-symbols-outlined text-sm">arrow_back</span>
             Back to Feed
@@ -108,83 +133,20 @@ export default function ArticleReaderPage({ params }: { params: Promise<{ slug: 
                 <span className="material-symbols-outlined text-5xl text-error mb-2 animate-bounce">warning</span>
                 <h1 className="font-headline-lg text-2xl font-bold text-on-surface">Article Not Found</h1>
                 <p className="font-body-md text-on-surface-variant max-w-sm mx-auto">
-                  {error === 'Post not found.' 
+                  {error instanceof Error && error.message === 'Failed to fetch article details'
                     ? 'The story you are looking for might have been moved, deleted, or is currently saved as a draft.'
-                    : error}
+                    : (error instanceof Error ? error.message : String(error))}
                 </p>
                 <Link href="/feed" className="inline-flex bg-primary-container text-on-primary-container font-label-caps text-label-caps uppercase px-6 py-3 rounded-lg hover:opacity-90 transition-all cursor-pointer">
                   Back to Feed
                 </Link>
               </div>
             ) : (
-              <article className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
-                
-                {/* Header Category Tag */}
-                {post.category && (
-                  <span className="px-3 py-1 bg-primary/5 text-primary rounded-full text-xs font-semibold tracking-wider font-label-caps border border-primary/20">
-                    {post.category}
-                  </span>
-                )}
-
-                {/* Article Title */}
-                <h1 className="font-headline-lg text-3xl md:text-4xl lg:text-[40px] font-bold text-on-surface leading-[1.1] tracking-tight">
-                  {post.title}
-                </h1>
-
-                {/* Author Profile Metadata Row */}
-                <div className="flex items-center justify-between border-y border-outline-variant/30 py-4">
-                  <div className="flex items-center gap-3">
-                    {post.authorId?.avatar ? (
-                      <img 
-                        src={post.authorId.avatar} 
-                        className="w-10 h-10 rounded-full object-cover border border-outline-variant/20" 
-                        alt={post.authorId.name || 'Author'} 
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
-                        {getAvatarFallback(post.authorId?.name)}
-                      </div>
-                    )}
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-body-md text-sm text-on-surface font-semibold">{post.authorId?.name || 'Anonymous'}</span>
-                        {post.authorId?.role === 'CREATOR' && (
-                          <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-bold font-label-caps uppercase">Creator</span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 text-xs text-on-surface-variant font-medium">
-                        <span>{formatDate(post.createdAt)}</span>
-                        <span>·</span>
-                        <span>{calculateReadingTime(post.htmlContent)} min read</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-4 text-on-surface-variant text-sm font-medium">
-                    <div className="flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-[18px]">visibility</span>
-                      <span>{post.views || 0} views</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Optional Cover Image Banner */}
-                {post.coverImage && (
-                  <div className="w-full aspect-[2/1] overflow-hidden rounded-xl border border-outline-variant/30">
-                    <img 
-                      src={post.coverImage} 
-                      className="w-full h-full object-cover animate-in zoom-in-95 duration-500" 
-                      alt={post.title} 
-                    />
-                  </div>
-                )}
-
-                {/* Rich-Text Content Column */}
-                <div className="tiptap font-serif text-lg leading-relaxed text-on-surface/90 pt-4">
-                  <div dangerouslySetInnerHTML={{ __html: post.htmlContent }} />
-                </div>
-
-              </article>
+              <ArticleContent
+                post={post}
+                onToggleBookmark={handleToggleBookmark}
+                bookmarking={toggleBookmarkMutation.isPending}
+              />
             )}
           </div>
         </main>

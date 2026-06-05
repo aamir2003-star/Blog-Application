@@ -31,7 +31,7 @@ export default function SideNavBar() {
   const navItems = [
     { name: 'Home', icon: 'home', href: '/feed' },
     { name: 'Explore', icon: 'explore', href: '/explore' },
-    { name: 'Bookmarks', icon: 'bookmarks', href: '/bookmarks' },
+    { name: 'Library', icon: 'bookmark', href: '/library' },
   ];
 
   // Close mobile drawer on navigation click

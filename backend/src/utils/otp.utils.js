@@ -207,3 +207,97 @@ export const sendPasswordResetOTPEmail = async (to, name, otp) => {
   });
 };
 
+
+/**
+ * Send a secure published post deletion warning email with a 6-digit OTP code.
+ *
+ * @param {string} to - Recipient email
+ * @param {string} name - Recipient name
+ * @param {string} postTitle - Title of the post requested for deletion
+ * @param {string} otp - 6-digit OTP code string
+ */
+export const sendPostDeletionOTPEmail = async (to, name, postTitle, otp) => {
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Confirm Story Deletion</title>
+</head>
+<body style="margin:0;padding:0;background-color:#0f0f14;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0f0f14;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
+
+          <!-- Logo / Header -->
+          <tr>
+            <td align="center" style="padding-bottom:32px;">
+              <div style="display:inline-block;background:linear-gradient(135deg,#006d38,#00ba63);border-radius:12px;padding:10px 20px;">
+                <span style="color:#fff;font-size:18px;font-weight:700;letter-spacing:-0.5px;">⚡ Writen Security</span>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Card -->
+          <tr>
+            <td style="background-color:#1a1a2e;border:1px solid #2d2d44;border-radius:16px;padding:40px 48px;">
+
+              <!-- Greeting -->
+              <p style="margin:0 0 8px;font-size:24px;font-weight:700;color:#fff;">
+                Confirm Story Deletion
+              </p>
+              <p style="margin:0 0 32px;font-size:15px;color:#9ca3af;line-height:1.6;">
+                Hi ${name || 'Author'}, we received a request to permanently delete your published story: <strong>"${postTitle}"</strong>. Enter the verification code below in the delete confirmation panel.
+              </p>
+
+              <!-- OTP Box -->
+              <div style="background:linear-gradient(135deg,#1e2e1e,#103510);border:1px solid #00ba63;border-radius:12px;padding:28px;text-align:center;margin-bottom:32px;">
+                <p style="margin:0 0 8px;font-size:12px;font-weight:600;color:#4ae084;text-transform:uppercase;letter-spacing:1.5px;">
+                  Your deletion verification code
+                </p>
+                <p style="margin:0;font-size:48px;font-weight:800;letter-spacing:12px;color:#ffffff;font-family:'Courier New',monospace;">
+                  ${otp}
+                </p>
+              </div>
+
+              <!-- Expiry notice -->
+              <div style="background-color:#2a1f1f;border-left:3px solid #ba1a1a;border-radius:0 8px 8px 0;padding:12px 16px;margin-bottom:32px;">
+                <p style="margin:0;font-size:13px;color:#ffdad6;">
+                  ⚠️ This code expires in <strong>5 minutes</strong>. If you did not initiate this deletion, your account may be compromised. Please change your password immediately.
+                </p>
+              </div>
+
+              <!-- Footer note -->
+              <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.6;">
+                If you didn't request this action, you can safely ignore this email. Your published story will remain online and unaffected.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="padding-top:24px;">
+              <p style="margin:0;font-size:12px;color:#4b5563;">
+                © ${new Date().getFullYear()} Writen. All rights reserved.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+
+  await sendEmail({
+    to,
+    subject: `Confirm deletion of "${postTitle}" — ${otp}`,
+    html,
+  });
+};
+
+

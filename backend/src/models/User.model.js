@@ -72,6 +72,11 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+
+    autoDeleteTrash: {
+      type: Boolean,
+      default: true,
+    },
   },
   {
     timestamps: true, // Adds createdAt and updatedAt automatically

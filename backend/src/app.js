@@ -45,7 +45,7 @@ app.use(
     },
     credentials: true, // Allow cookies (refresh token)
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-delete-code', 'X-Delete-Code'],
   })
 );
 

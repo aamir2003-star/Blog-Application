@@ -9,6 +9,7 @@ import {
   refresh,
   logout,
   getMe,
+  updateSettings,
   googleCallback,
   githubCallback,
   googleOneTap,
@@ -112,6 +113,9 @@ router.post('/logout', logout);
 
 /** GET /api/auth/me */
 router.get('/me', verifyToken, getMe);
+
+/** PATCH /api/auth/settings */
+router.patch('/settings', verifyToken, updateSettings);
 
 // ─── Google OAuth ─────────────────────────────────────────────────────────────
 

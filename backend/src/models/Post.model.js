@@ -93,10 +93,48 @@ const postSchema = new mongoose.Schema(
       default: 'DRAFT',
     },
 
-    views: {
+    totalViews: {
       type: Number,
       default: 0,
       index: true,
+    },
+
+    uniqueVisitors: {
+      type: Number,
+      default: 0,
+      index: true,
+    },
+
+    reads: {
+      type: Number,
+      default: 0,
+      index: true,
+    },
+
+    deleteOtpHash: {
+      type: String,
+      default: null,
+    },
+
+    deleteOtpExpires: {
+      type: Date,
+      default: null,
+    },
+
+    deleted: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
+
+    autoDeleteAt: {
+      type: Date,
+      default: null,
     },
 
     authorId: {
@@ -127,6 +165,9 @@ postSchema.index({ category: 1, status: 1 });
 
 // Speed up "my posts" dashboard listing per author
 postSchema.index({ authorId: 1, createdAt: -1 });
+
+// native MongoDB TTL index to delete soft-deleted documents automatically after 30 days
+postSchema.index({ autoDeleteAt: 1 }, { expireAfterSeconds: 0 });
 
 // ─── Virtual: Author (populated) ──────────────────────────────────────────────
 
