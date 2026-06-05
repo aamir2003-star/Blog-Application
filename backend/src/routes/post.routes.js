@@ -16,6 +16,7 @@ import {
   restorePost,
   permanentDeletePost,
   getReadingHistory,
+  deleteReadingHistoryEntry,
 } from '../controllers/post.controller.js';
 import { verifyToken } from '../middleware/auth.middleware.js';
 import { validate } from '../middleware/validate.middleware.js';
@@ -99,6 +100,12 @@ router.get('/bookmarks/list', verifyToken, getBookmarks);
  * Fetch all reading history posts for the authenticated user.
  */
 router.get('/history', verifyToken, getReadingHistory);
+
+/**
+ * DELETE /api/posts/history/:id
+ * Delete a specific reading history record.
+ */
+router.delete('/history/:id', verifyToken, deleteReadingHistoryEntry);
 
 /**
  * POST /api/posts

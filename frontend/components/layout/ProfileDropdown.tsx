@@ -71,14 +71,7 @@ export default function ProfileDropdown() {
             <span className="material-symbols-outlined text-[18px]">person</span>
             Profile
           </Link>
-          <Link
-            href="/bookmarks"
-            onClick={() => setShowMenu(false)}
-            className="flex items-center gap-3 px-4 py-2.5 text-sm text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors cursor-pointer"
-          >
-            <span className="material-symbols-outlined text-[18px]">bookmarks</span>
-            Bookmarks
-          </Link>
+
           <div className="border-t border-outline-variant/20 mt-1 pt-1">
             <button
               onClick={handleLogout}

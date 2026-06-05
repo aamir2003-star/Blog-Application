@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { useUIStore } from '@/lib/ui-store';
 import ProfileDropdown from './ProfileDropdown';
+import TopicsDropdown from './TopicsDropdown';
 
 export default function TopNavBar() {
   const { user } = useAuth();
@@ -33,6 +34,9 @@ export default function TopNavBar() {
       </div>
       
       <div className="flex items-center gap-2">
+        {/* Topics Dropdown */}
+        <TopicsDropdown />
+
         {/* Write Button */}
         {user ? (
           <Link href="/write" className="hidden md:flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors px-3 py-2">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, use } from 'react';
+import { useEffect, use, useRef } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import TopNavBar from '@/components/layout/TopNavBar';
@@ -16,7 +16,7 @@ interface PageProps {
 
 export default function PostDetailPage({ params }: PageProps) {
   const { slug } = use(params);
-  const { accessToken } = useAuth();
+  const { accessToken, loading: authLoading } = useAuth();
 
   // ── React Query Queries & Mutations ──
   const { data: post, isLoading: loading, error } = usePostDetailQuery(slug, accessToken);
@@ -24,9 +24,15 @@ export default function PostDetailPage({ params }: PageProps) {
   const recordViewMutation = useRecordViewMutation(accessToken);
   const recordReadMutation = useRecordReadMutation(accessToken);
 
+  const viewTracked = useRef<string | null>(null);
+
   // ── Telemetry Effects (View & Read) ──
   useEffect(() => {
+    if (authLoading) return;
     if (!post?._id) return;
+
+    if (viewTracked.current === post._id) return;
+    viewTracked.current = post._id;
 
     // Generate or retrieve persistent visitor ID
     let visitorId = localStorage.getItem('writen_visitor_uuid');
@@ -85,7 +91,7 @@ export default function PostDetailPage({ params }: PageProps) {
       clearInterval(interval);
       window.removeEventListener('scroll', onScroll);
     };
-  }, [post?._id]);
+  }, [post?._id, authLoading, accessToken]);
 
   const handleToggleBookmark = () => {
     if (post?._id) {

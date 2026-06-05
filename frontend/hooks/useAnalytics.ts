@@ -23,6 +23,7 @@ export function useRecordViewMutation(accessToken?: string | null) {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['post', variables.postId] });
       queryClient.invalidateQueries({ queryKey: ['myPosts'] });
+      queryClient.invalidateQueries({ queryKey: ['readingHistory'] });
     },
   });
 }

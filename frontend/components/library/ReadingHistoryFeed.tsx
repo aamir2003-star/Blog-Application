@@ -1,6 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth-context';
+import { useDeleteHistoryMutation } from '@/hooks/useBookmarks';
 
 function calculateReadingTime(htmlStr: string): number {
   if (!htmlStr) return 1;
@@ -27,6 +30,10 @@ export default function ReadingHistoryFeed({
   loading,
   inline = false,
 }: ReadingHistoryFeedProps) {
+  const { accessToken } = useAuth();
+  const router = useRouter();
+  const deleteHistoryMutation = useDeleteHistoryMutation(accessToken);
+
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '';
     const date = new Date(dateStr);
@@ -44,6 +51,15 @@ export default function ReadingHistoryFeed({
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  const getShortDescription = (text: string) => {
+    if (!text) return 'No description provided.';
+    const words = text.trim().split(/\s+/);
+    if (words.length > 20) {
+      return words.slice(0, 20).join(' ') + '...';
+    }
+    return text;
   };
 
   return (
@@ -76,8 +92,6 @@ export default function ReadingHistoryFeed({
         </div>
       )}
 
-      <div className="border-t border-outline-variant/15 my-6" />
-
       {loading ? (
         <div className="py-20 flex flex-col items-center justify-center gap-3 select-none">
           <span className="material-symbols-outlined animate-spin text-primary text-[28px]">progress_activity</span>
@@ -92,38 +106,40 @@ export default function ReadingHistoryFeed({
           </p>
         </div>
       ) : (
-        <div className="divide-y divide-outline-variant/15 space-y-6">
+        <div className="divide-y divide-outline-variant/15 space-y-6 pt-4">
           {historyList.map((entry) => {
             const post = entry.postId;
             if (!post) return null;
 
+            const isRemoving = deleteHistoryMutation.isPending && deleteHistoryMutation.variables === entry._id;
+            const readTime = calculateReadingTime(post.htmlContent);
+            const author = post.authorId || {};
+
             return (
               <div 
                 key={entry._id} 
-                className="pt-6 first:pt-0 space-y-4 transition-all duration-500"
+                className={`pt-6 first:pt-0 transition-all duration-500 ${
+                  isRemoving ? 'opacity-0 scale-95 select-none pointer-events-none' : ''
+                }`}
               >
-                <div className="flex gap-4 justify-between">
-                  {/* Left Text content */}
-                  <div className="flex-1 space-y-3">
+                <article
+                  onClick={() => router.push(`/feed/${post.slug}`)}
+                  className="group cursor-pointer flex gap-6 items-center justify-between"
+                >
+                  <div className="flex-1 min-w-0">
                     {/* Metadata header */}
-                    <div className="flex items-center gap-2 select-none">
-                      {post.authorId?.avatar ? (
-                        <img src={post.authorId.avatar} className="w-5 h-5 rounded-full object-cover" alt="author avatar" />
+                    <div className="flex items-center gap-2 mb-2 select-none">
+                      {author.avatar ? (
+                        <img src={author.avatar} className="w-5 h-5 rounded-full object-cover" alt="Author" />
                       ) : (
-                        <div className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-[9px]">
-                          {post.authorId?.name?.charAt(0).toUpperCase() || 'A'}
+                        <div className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-[10px]">
+                          {author.name?.charAt(0).toUpperCase() || 'U'}
                         </div>
                       )}
-                      <span className="text-xs font-semibold text-on-surface leading-none">
-                        {post.authorId?.name || 'Anonymous'}
+                      <span className="text-xs font-semibold text-on-surface-variant">
+                        {author.name || 'Anonymous'}
                       </span>
-                      {post.category && (
-                        <>
-                          <span className="text-[10px] text-outline-variant">in</span>
-                          <span className="text-xs font-semibold text-primary">{post.category}</span>
-                        </>
-                      )}
-                      <span className="text-outline-variant/40">•</span>
+                      <span className="text-outline-variant/40 select-none">·</span>
                       <span className="text-[11px] font-semibold text-primary bg-primary/5 px-2 py-0.5 rounded border border-primary/10 flex items-center gap-1">
                         <span className="material-symbols-outlined text-[12px]">schedule</span>
                         Viewed {formatDate(entry.viewedAt)} at {formatTimeSpent(entry.viewedAt)}
@@ -131,33 +147,55 @@ export default function ReadingHistoryFeed({
                     </div>
 
                     {/* Title & Excerpt */}
-                    <div className="space-y-1">
-                      <Link 
-                        href={`/feed/${post.slug}`}
-                        className="block text-xl font-bold text-on-surface hover:text-primary transition-colors leading-snug tracking-tight"
-                      >
-                        {post.title}
-                      </Link>
-                      <p className="text-sm text-on-surface-variant line-clamp-2 leading-relaxed">
-                        {post.excerpt || 'No summary excerpt provided.'}
-                      </p>
-                    </div>
+                    <h2 className="font-headline-lg text-xl font-bold text-on-surface group-hover:text-primary transition-colors line-clamp-2 mb-1.5 leading-snug">
+                      {post.title}
+                    </h2>
+                    <p className="font-body-md text-on-surface-variant text-sm line-clamp-2 leading-relaxed">
+                      {getShortDescription(post.excerpt || post.htmlContent?.replace(/<\/?[^>]+(>|$)/g, ''))}
+                    </p>
 
                     {/* Footer action ribbon */}
-                    <div className="flex items-center justify-between pt-1 select-none">
-                      <span className="text-[11px] font-medium text-on-surface-variant">
-                        {calculateReadingTime(post.htmlContent)} min read
-                      </span>
+                    <div className="flex items-center mt-3 select-none">
+                      <div className="flex items-center gap-4">
+                        {post.category && (
+                          <span className="px-2.5 py-0.5 bg-primary/5 text-primary text-[10px] rounded-full font-label-caps border border-primary/10 font-semibold">
+                            {post.category}
+                          </span>
+                        )}
+                        <span className="text-xs text-on-surface-variant font-medium">
+                          {readTime} min read
+                        </span>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Right cover image thumbnail */}
-                  {post.coverImage && (
-                    <div className="w-[120px] h-[80px] rounded-lg overflow-hidden border border-outline-variant/15 shrink-0 bg-surface-container-low select-none">
-                      <img src={post.coverImage} className="w-full h-full object-cover" alt="post cover" />
-                    </div>
-                  )}
-                </div>
+                  {/* Right Action & Cover block */}
+                  <div className="flex items-center gap-4 shrink-0 select-none">
+                    {/* Cover image thumbnail */}
+                    {post.coverImage && (
+                      <div className="w-[120px] h-[80px] rounded-lg overflow-hidden border border-outline-variant/20 shrink-0 select-none">
+                        <img 
+                          src={post.coverImage} 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                          alt="Cover" 
+                        />
+                      </div>
+                    )}
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteHistoryMutation.mutate(entry._id);
+                      }}
+                      className="p-1.5 hover:bg-surface-container-low text-on-surface-variant hover:text-error rounded-lg transition-colors cursor-pointer active:scale-90 border-none bg-transparent flex items-center justify-center"
+                      title="Remove from history"
+                    >
+                      <span className="material-symbols-outlined text-[20px]">
+                        delete
+                      </span>
+                    </button>
+                  </div>
+                </article>
               </div>
             );
           })}

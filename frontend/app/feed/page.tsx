@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import TopNavBar from '@/components/layout/TopNavBar';
 import SideNavBar from '@/components/layout/SideNavBar';
-import RightSidebar from '@/components/layout/RightSidebar';
 import { useUIStore } from '@/lib/ui-store';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
@@ -39,9 +38,26 @@ function PostCardSkeleton() {
   );
 }
 
-// ─── Feed Page ─────────────────────────────────────────────────────────────
+// ─── Main Feed Page Wrapper (Suspense Guard) ──────────────────────────────────
 export default function FeedPage() {
+  return (
+    <Suspense 
+      fallback={
+        <div className="min-h-screen bg-surface flex flex-col items-center justify-center select-none">
+          <span className="material-symbols-outlined animate-spin text-primary text-[40px]">progress_activity</span>
+        </div>
+      }
+    >
+      <FeedPageContent />
+    </Suspense>
+  );
+}
+
+// ─── Inner Feed Page Content ──────────────────────────────────────────────────
+function FeedPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const categoryParam = searchParams ? searchParams.get('category') : null;
   const { sidebarOpen } = useUIStore();
 
   // Dynamic Tabs & Filter States
@@ -54,6 +70,15 @@ export default function FeedPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
   const [hasNextPage, setHasNextPage] = useState(false);
+
+  // Sync activeTab with categoryParam from searchParams
+  useEffect(() => {
+    if (categoryParam) {
+      setActiveTab(categoryParam);
+    } else {
+      setActiveTab('For you');
+    }
+  }, [categoryParam]);
 
   // Fetch Categories on Mount
   useEffect(() => {
@@ -119,6 +144,14 @@ export default function FeedPage() {
     fetchPosts(nextPage, activeTab, true);
   };
 
+  const handleTabChange = (tab: string) => {
+    if (tab === 'For you') {
+      router.push('/feed');
+    } else {
+      router.push(`/feed?category=${encodeURIComponent(tab)}`);
+    }
+  };
+
   // Word-count reading estimator (200 words per minute rule)
   const calculateReadingTime = (htmlStr: string) => {
     if (!htmlStr) return 1;
@@ -149,10 +182,10 @@ export default function FeedPage() {
       <div className="flex-1 flex w-full">
         <SideNavBar />
         
-        <div className="flex-1 flex justify-between pl-16 max-w-[1150px] transition-all duration-[450ms] ease-in-out">
+        <div className="flex-1 flex justify-center pl-16 w-full transition-all duration-[450ms] ease-in-out">
           <main 
             style={{ transform: sidebarOpen ? 'translateX(0)' : 'translateX(100px)' }}
-            className="flex-1 max-w-[800px] w-full border-r border-outline-variant/30 min-h-[calc(100vh-57px)] transition-all duration-[450ms] ease-in-out"
+            className="flex-1 max-w-[800px] w-full min-h-[calc(100vh-57px)] transition-all duration-[450ms] ease-in-out"
           >
             
             {/* Navigation Tabs Header */}
@@ -161,7 +194,7 @@ export default function FeedPage() {
                 {['For you', 'Following'].map((tab) => (
                   <button
                     key={tab}
-                    onClick={() => setActiveTab(tab)}
+                    onClick={() => handleTabChange(tab)}
                     className={`pb-4 whitespace-nowrap text-sm font-label-caps transition-colors relative cursor-pointer ${
                       activeTab === tab 
                         ? 'text-on-surface font-bold' 
@@ -179,7 +212,7 @@ export default function FeedPage() {
                   <div className="pb-4 whitespace-nowrap text-sm font-label-caps relative flex items-center gap-1.5 text-primary font-bold">
                     <span>{activeTab}</span>
                     <button
-                      onClick={() => setActiveTab('For you')}
+                      onClick={() => handleTabChange('For you')}
                       className="p-0.5 hover:bg-primary/10 rounded-full transition-colors flex items-center justify-center cursor-pointer select-none text-primary border-none bg-transparent"
                       title="Clear topic filter"
                     >
@@ -299,11 +332,6 @@ export default function FeedPage() {
             </div>
 
           </main>
-          
-          <RightSidebar 
-            onSelectCategory={(topic) => setActiveTab(topic)} 
-            style={{ transform: sidebarOpen ? 'translateX(0)' : 'translateX(110px)' }}
-          />
         </div>
       </div>
     </div>

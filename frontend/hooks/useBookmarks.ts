@@ -84,3 +84,25 @@ export function useReadingHistoryQuery(accessToken: string | null) {
     },
   });
 }
+
+// ─── Delete Reading History Mutation ───
+export function useDeleteHistoryMutation(accessToken: string | null) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (historyId: string) => {
+      const res = await fetch(`${API_BASE}/posts/history/${historyId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to delete history entry');
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['readingHistory'] });
+    },
+  });
+}
+

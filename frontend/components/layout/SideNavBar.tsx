@@ -30,7 +30,6 @@ export default function SideNavBar() {
 
   const navItems = [
     { name: 'Home', icon: 'home', href: '/feed' },
-    { name: 'Explore', icon: 'explore', href: '/explore' },
     { name: 'Library', icon: 'bookmark', href: '/library' },
   ];
 

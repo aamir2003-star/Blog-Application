@@ -802,3 +802,23 @@ export const getReadingHistory = async (req, res) => {
     data: activeHistory,
   });
 };
+
+/**
+ * Delete a specific reading history record for the current user.
+ * DELETE /api/posts/history/:id
+ */
+export const deleteReadingHistoryEntry = async (req, res) => {
+  const userId = req.user._id;
+  const historyId = req.params.id;
+
+  const record = await ReadingHistory.findOneAndDelete({ _id: historyId, userId });
+  if (!record) {
+    throw new AppError('Reading history record not found.', 404);
+  }
+
+  res.status(200).json({
+    success: true,
+    message: 'Article removed from reading history.',
+  });
+};
+
