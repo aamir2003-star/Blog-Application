@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, FormEvent, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, FormEvent, useRef, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 
@@ -66,6 +66,14 @@ function OtpInput({ value, onChange }: { value: string; onChange: (v: string) =>
 
 // ─── Page ──────────────────────────────────────────────────────────────────
 export default function RegisterPage() {
+  return (
+    <Suspense fallback={null}>
+      <RegisterContent />
+    </Suspense>
+  );
+}
+
+function RegisterContent() {
   const { user, loading, setTokenFromOAuth } = useAuth();
   const router = useRouter();
 
@@ -82,9 +90,22 @@ export default function RegisterPage() {
   const [errors, setErrors] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
+  const searchParams = useSearchParams();
+
   useEffect(() => {
-    if (!loading && user) router.replace('/onboarding');
-  }, [user, loading, router]);
+    const r = searchParams.get('redirect');
+    if (r) {
+      sessionStorage.setItem('auth_redirect', r);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!loading && user) {
+      const target = sessionStorage.getItem('auth_redirect') || searchParams.get('redirect') || '/feed';
+      sessionStorage.removeItem('auth_redirect');
+      router.replace(target);
+    }
+  }, [user, loading, router, searchParams]);
 
   useEffect(() => {
     if (resendCooldown <= 0) return;

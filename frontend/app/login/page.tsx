@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, FormEvent, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, FormEvent, useRef, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 
@@ -71,6 +71,14 @@ function GitHubIcon() {
 
 // ─── Page ──────────────────────────────────────────────────────────────────
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginContent />
+    </Suspense>
+  );
+}
+
+function LoginContent() {
   const { user, loading, login } = useAuth();
   const router = useRouter();
 
@@ -105,9 +113,22 @@ export default function LoginPage() {
 
   const isResetSubmitEnabled = isPasswordValid && forgotOtp.length === 6;
 
+  const searchParams = useSearchParams();
+
   useEffect(() => {
-    if (!loading && user) router.replace('/onboarding');
-  }, [user, loading, router]);
+    const r = searchParams.get('redirect');
+    if (r) {
+      sessionStorage.setItem('auth_redirect', r);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!loading && user) {
+      const target = sessionStorage.getItem('auth_redirect') || searchParams.get('redirect') || '/feed';
+      sessionStorage.removeItem('auth_redirect');
+      router.replace(target);
+    }
+  }, [user, loading, router, searchParams]);
 
   // Timed redirect back to login state upon success
   useEffect(() => {
@@ -135,7 +156,9 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       await login(email, password);
-      router.push('/onboarding');
+      const target = sessionStorage.getItem('auth_redirect') || '/feed';
+      sessionStorage.removeItem('auth_redirect');
+      router.push(target);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {

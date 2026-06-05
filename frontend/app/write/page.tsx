@@ -307,6 +307,21 @@ export default function WritePage() {
     }
   };
 
+  const handleQuit = () => {
+    const hasAnyContent = title.trim() || canvasBlocks.some(b => b.value.trim());
+    if (hasAnyContent) {
+      const confirmQuit = window.confirm("Are you sure you want to quit? Any unsaved changes in this session will be lost.");
+      if (!confirmQuit) return;
+    }
+    
+    // Clear local workspace cache on explicit quit
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('writen_offline_draft');
+    }
+    
+    router.push('/feed');
+  };
+
   const handlePublish = async () => {
     if (publishing || createPostMutation.isPending || updatePostMutation.isPending) return;
     if (!validate()) return;
@@ -389,6 +404,7 @@ export default function WritePage() {
         user={user}
         onPublish={handlePublish}
         onSaveDraft={handleSaveDraft}
+        onQuit={handleQuit}
       />
 
       <main className="flex-1 max-w-[720px] w-full mx-auto px-6 py-12 flex flex-col relative">

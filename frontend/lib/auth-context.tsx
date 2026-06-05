@@ -138,6 +138,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user) setLoading(false);
   }, [user]);
 
+  // Synchronize accessToken to cookie for server-side consumption
+  useEffect(() => {
+    if (accessToken) {
+      document.cookie = `writen_access_token=${accessToken}; path=/; max-age=900; SameSite=Lax`;
+    } else {
+      document.cookie = `writen_access_token=; path=/; max-age=0; SameSite=Lax`;
+    }
+  }, [accessToken]);
+
   // ── Login ─────────────────────────────────────────────────────────────────
 
   const login = async (email: string, password: string) => {

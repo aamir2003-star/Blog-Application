@@ -33,7 +33,11 @@ export default function OAuthCallbackInner() {
     window.history.replaceState({}, '', '/auth/oauth-callback');
 
     setTokenFromOAuth(token)
-      .then(() => router.replace('/onboarding'))
+      .then(() => {
+        const target = sessionStorage.getItem('auth_redirect') || '/onboarding';
+        sessionStorage.removeItem('auth_redirect');
+        router.replace(target);
+      })
       .catch(() => {
         setErrorMsg('Failed to fetch your profile. Please try again.');
         setStatus('error');

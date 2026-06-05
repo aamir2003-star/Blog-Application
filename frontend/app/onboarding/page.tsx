@@ -12,13 +12,27 @@ export default function OnboardingPage() {
   const [showSplash, setShowSplash] = useState(true);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
-  // Splash screen timer — give enough time for the full animation, then redirect straight to feed
+  const [redirectUrl, setRedirectUrl] = useState('/feed');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = sessionStorage.getItem('auth_redirect');
+      if (stored) {
+        setRedirectUrl(stored);
+      }
+    }
+  }, []);
+
+  // Splash screen timer — give enough time for the full animation, then redirect straight to feed or target
   useEffect(() => {
     const hideTimer = setTimeout(() => {
-      router.push('/feed');
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('auth_redirect');
+      }
+      router.push(redirectUrl);
     }, 3500);
     return () => clearTimeout(hideTimer);
-  }, [router]);
+  }, [router, redirectUrl]);
 
   const appName = 'Writen';
   const taglineWords = ['Where', 'ideas', 'take', 'shape.'];
@@ -61,7 +75,10 @@ export default function OnboardingPage() {
 
   const handleComplete = () => {
     // TODO: send selected tags to backend
-    router.push('/feed');
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('auth_redirect');
+    }
+    router.push(redirectUrl);
   };
 
   // ── Splash Screen ──
@@ -272,7 +289,12 @@ export default function OnboardingPage() {
           </div>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => router.push('/feed')}
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  sessionStorage.removeItem('auth_redirect');
+                }
+                router.push(redirectUrl);
+              }}
               className="px-6 py-3 rounded-full font-label-caps text-sm text-on-surface-variant hover:text-on-surface transition-colors"
             >
               Skip
@@ -286,7 +308,7 @@ export default function OnboardingPage() {
                   : 'bg-surface-variant text-on-surface-variant cursor-not-allowed'
               }`}
             >
-              Continue to Feed
+              Continue
               <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
             </button>
           </div>

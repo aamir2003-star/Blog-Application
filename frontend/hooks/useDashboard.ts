@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 
 // ─── Fetch Creator's Active Posts & Analytics ───
-export function useMyPostsQuery(accessToken: string | null) {
+export function useMyPostsQuery(accessToken: string | null, initialData?: any) {
   return useQuery({
     queryKey: ['myPosts', !!accessToken],
     enabled: !!accessToken,
@@ -16,11 +16,13 @@ export function useMyPostsQuery(accessToken: string | null) {
       if (!res.ok) throw new Error('Failed to fetch creator publications');
       return res.json();
     },
+    initialData,
+    staleTime: initialData ? Infinity : 0,
   });
 }
 
 // ─── Fetch Creator's Trashed Posts ───
-export function useTrashPostsQuery(accessToken: string | null) {
+export function useTrashPostsQuery(accessToken: string | null, initialData?: any) {
   return useQuery({
     queryKey: ['trashPosts', !!accessToken],
     enabled: !!accessToken,
@@ -33,6 +35,8 @@ export function useTrashPostsQuery(accessToken: string | null) {
       if (!res.ok) throw new Error('Failed to fetch trashed publications');
       return res.json();
     },
+    initialData,
+    staleTime: initialData ? Infinity : 0,
   });
 }
 

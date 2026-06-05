@@ -12,6 +12,7 @@ interface WriteBarProps {
   user: any;
   onPublish: () => void;
   onSaveDraft: () => void;
+  onQuit: () => void;
 }
 
 export default function WriteBar({
@@ -22,6 +23,7 @@ export default function WriteBar({
   user,
   onPublish,
   onSaveDraft,
+  onQuit,
 }: WriteBarProps) {
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const moreMenuRef = useRef<HTMLDivElement>(null);
@@ -40,9 +42,12 @@ export default function WriteBar({
   return (
     <header className="sticky top-0 z-40 bg-surface/95 backdrop-blur-md border-b border-outline-variant/20 px-4 sm:px-6 py-3 flex justify-between items-center select-none">
       <div className="flex items-center gap-3 sm:gap-4">
-        <Link href="/feed" className="font-headline-lg text-lg sm:text-xl font-bold text-on-surface tracking-tight hover:opacity-90 decoration-none">
+        <button 
+          onClick={onQuit} 
+          className="font-headline-lg text-lg sm:text-xl font-bold text-on-surface tracking-tight hover:opacity-90 bg-transparent border-none p-0 cursor-pointer focus:outline-none"
+        >
           Writen
-        </Link>
+        </button>
         
         {syncStatus === 'idle' && (
           <span className="font-label-caps text-xs text-on-surface-variant px-2 py-0.5 sm:px-2.5 bg-surface-container rounded-md border border-outline-variant/10 select-none flex items-center gap-1.5">
@@ -78,6 +83,14 @@ export default function WriteBar({
 
       <div className="flex items-center gap-2 sm:gap-3">
         <button
+          onClick={onQuit}
+          disabled={publishing || loadingPost}
+          className="border border-outline-variant/35 text-on-surface-variant hover:text-on-surface font-label-caps text-xs px-3.5 sm:px-4.5 py-1.75 sm:py-2 rounded-full hover:bg-surface-container-low transition-all active:scale-95 cursor-pointer bg-transparent focus:outline-none"
+        >
+          Quit
+        </button>
+
+        <button
           onClick={onPublish}
           disabled={publishing || loadingPost}
           className="bg-primary text-on-primary font-label-caps text-xs px-4 sm:px-5 py-2 rounded-full hover:bg-primary-container hover:text-on-primary-container transition-all active:scale-95 disabled:opacity-60 flex items-center gap-1.5 sm:gap-2 shadow-sm font-semibold border-none cursor-pointer"
@@ -99,14 +112,16 @@ export default function WriteBar({
 
           {showMoreMenu && (
             <div className="absolute right-0 top-11 w-48 bg-surface-container-lowest border border-outline-variant/30 rounded-xl shadow-lg py-2 animate-in fade-in slide-in-from-top-2 duration-200 z-50">
-              <Link
-                href="/feed"
-                onClick={() => setShowMoreMenu(false)}
-                className="flex items-center gap-3 px-4 py-2.5 text-sm text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors cursor-pointer decoration-none"
+              <button
+                onClick={() => {
+                  setShowMoreMenu(false);
+                  onQuit();
+                }}
+                className="flex items-center gap-3 px-4 py-2.5 text-sm text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors cursor-pointer bg-transparent border-none w-full text-left"
               >
                 <span className="material-symbols-outlined text-[18px]">home</span>
                 Home
-              </Link>
+              </button>
               
               <button
                 onClick={() => {

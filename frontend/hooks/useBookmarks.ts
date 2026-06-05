@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 
 // ─── Fetch User's Bookmarked Posts ───
-export function useBookmarksQuery(accessToken: string | null) {
+export function useBookmarksQuery(accessToken: string | null, initialData?: any[]) {
   return useQuery({
     queryKey: ['bookmarks', !!accessToken],
     enabled: !!accessToken,
@@ -17,6 +17,8 @@ export function useBookmarksQuery(accessToken: string | null) {
       const resData = await res.json();
       return resData.data as any[];
     },
+    initialData,
+    staleTime: initialData ? Infinity : 0,
   });
 }
 
@@ -68,7 +70,7 @@ export function useUpdateBookmarkNoteMutation(accessToken: string | null) {
 }
 
 // ─── Fetch User's Reading History ───
-export function useReadingHistoryQuery(accessToken: string | null) {
+export function useReadingHistoryQuery(accessToken: string | null, initialData?: any[]) {
   return useQuery({
     queryKey: ['readingHistory', !!accessToken],
     enabled: !!accessToken,
@@ -82,6 +84,8 @@ export function useReadingHistoryQuery(accessToken: string | null) {
       const resData = await res.json();
       return resData.data as any[];
     },
+    initialData,
+    staleTime: initialData ? Infinity : 0,
   });
 }
 
