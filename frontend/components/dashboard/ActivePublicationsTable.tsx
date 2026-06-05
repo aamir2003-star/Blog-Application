@@ -69,7 +69,7 @@ export default function ActivePublicationsTable({
           </div>
         ) : (
           <>
-            <table className="hidden md:table w-full text-left border-collapse">
+            <table className="hidden lg:table w-full text-left border-collapse">
               <thead>
                 <tr className="bg-surface-container-low/30 border-b border-outline-variant/10 select-none">
                   <th className="font-label-caps text-[10px] font-bold text-on-surface-variant/80 uppercase px-6 py-3.5 tracking-wider">Article Title</th>
@@ -212,7 +212,7 @@ export default function ActivePublicationsTable({
             </table>
 
             {/* Mobile Card Layout */}
-            <div className="block md:hidden divide-y divide-outline-variant/10">
+            <div className="block lg:hidden divide-y divide-outline-variant/10">
               {posts.map((post) => {
                 const isTransitioning = transitioningDeleteIds.includes(post._id);
                 const readTime = calculateReadingTime(post.htmlContent);

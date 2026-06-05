@@ -175,9 +175,8 @@ export default function CreatorDashboard() {
     <div className="min-h-screen bg-surface flex flex-col relative font-body-md text-on-surface">
       <TopNavBar />
 
-      <div className="flex-1 w-full max-w-[1280px] md:w-[80%] mx-auto flex px-4 md:px-6">
-        <div className="flex-1 flex justify-center py-10">
-          <main className="flex-1 max-w-[1000px] w-full flex flex-col gap-8 min-h-[calc(100vh-57px)]">
+      <div className="flex-1 w-full max-w-[1280px] md:w-[80%] mx-auto px-4 md:px-6 py-10">
+        <main className="w-full flex flex-col gap-8 min-h-[calc(100vh-57px)]">
             <DashboardHeader viewMode={viewMode} setViewMode={setViewMode} />
 
             {error && (
@@ -215,7 +214,6 @@ export default function CreatorDashboard() {
               </>
             )}
           </main>
-        </div>
       </div>
 
       <DeleteOtpModal
