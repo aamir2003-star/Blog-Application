@@ -4,10 +4,12 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useUIStore } from '@/lib/ui-store';
+import { useAuth } from '@/lib/auth-context';
 
 export default function SideNavBar() {
   const pathname = usePathname();
   const { sidebarOpen, setSidebarOpen } = useUIStore();
+  const { user } = useAuth();
 
   // Screen size detection: default to closed on mobile and open on desktop
   useEffect(() => {
@@ -98,6 +100,17 @@ export default function SideNavBar() {
           </div>
         </div>
 
+        {/* Mobile Drawer Write CTA */}
+        <div className="md:hidden mt-auto pt-6 border-t border-outline-variant/20">
+          <Link
+            href={user ? '/write' : '/login'}
+            onClick={handleLinkClick}
+            className="flex items-center justify-center gap-2 w-full py-3.5 bg-primary text-on-primary font-semibold rounded-2xl shadow-lg active:scale-95 transition-all hover:bg-primary/95"
+          >
+            <span className="material-symbols-outlined text-[20px]">edit_square</span>
+            <span className="font-label-caps text-sm">Write a Story</span>
+          </Link>
+        </div>
       </nav>
     </>
   );

@@ -34,7 +34,7 @@ function TopNavBarContent() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(searchQuery);
-    }, 200);
+    }, 400);
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
