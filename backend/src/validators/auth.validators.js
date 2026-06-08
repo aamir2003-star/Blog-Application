@@ -116,3 +116,38 @@ export const resetPasswordSchema = z.object({
   }),
 });
 
+// ─── Update Profile (name & avatar) ──────────────────────────────────────────
+export const updateProfileSchema = z.object({
+  body: z.object({
+    name: z
+      .string()
+      .trim()
+      .min(2, 'Name must be at least 2 characters')
+      .max(60, 'Name cannot exceed 60 characters')
+      .optional(),
+    avatar: z
+      .string()
+      .url('Please provide a valid avatar URL')
+      .nullable()
+      .optional(),
+  }),
+});
+
+// ─── Update Password Direct (with current password) ──────────────────────────
+export const updatePasswordDirectSchema = z.object({
+  body: z.object({
+    currentPassword: z
+      .string({ required_error: 'Current password is required' })
+      .min(1, 'Current password cannot be empty'),
+    newPassword: z
+      .string({ required_error: 'New password is required' })
+      .min(8, 'New password must be at least 8 characters')
+      .max(100, 'New password is too long')
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+        'New password must contain at least one uppercase letter, one lowercase letter, and one number'
+      ),
+  }),
+});
+
+

@@ -1,8 +1,16 @@
+import { Metadata } from 'next';
+import { generateSEO } from '@/lib/seo';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import TopNavBar from '@/components/layout/TopNavBar';
 import SideNavBar from '@/components/layout/SideNavBar';
 import LibraryPageClient from '@/components/library/LibraryPageClient';
+
+export const metadata: Metadata = generateSEO({
+  title: 'Library',
+  noIndex: true,
+});
+
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 

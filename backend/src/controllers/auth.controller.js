@@ -529,6 +529,14 @@ export const resetPassword = async (req, res) => {
     throw new AppError('Invalid or expired verification code.', 400);
   }
 
+  // Prevent setting same password as before
+  if (user.passwordHash) {
+    const isSame = await user.comparePassword(password);
+    if (isSame) {
+      throw new AppError('New password cannot be the same as your old password.', 400);
+    }
+  }
+
   // Hash and save new password
   const newPasswordHash = await User.hashPassword(password);
   user.passwordHash = newPasswordHash;
@@ -544,5 +552,61 @@ export const resetPassword = async (req, res) => {
     message: 'Password reset successful. You can now log in with your new password.',
   });
 };
+
+/**
+ * PATCH /api/auth/profile
+ * Update current user's profile information (name and avatar).
+ */
+export const updateProfile = async (req, res) => {
+  const { name, avatar } = req.body;
+  const user = await User.findById(req.user._id);
+  if (!user) throw new AppError('User not found.', 404);
+
+  if (name) user.name = name.trim();
+  if (avatar !== undefined) user.avatar = avatar;
+
+  await user.save();
+  res.status(200).json({
+    success: true,
+    message: 'Profile updated successfully.',
+    user
+  });
+};
+
+/**
+ * PATCH /api/auth/profile/password
+ * Directly update user password after validating current password.
+ */
+export const updatePasswordDirect = async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  const user = await User.findById(req.user._id);
+  if (!user) throw new AppError('User not found.', 404);
+
+  if (!user.passwordHash) {
+    throw new AppError('Accounts registered via social login do not have passwords.', 400);
+  }
+
+  // 1. Verify current password
+  const isMatch = await user.comparePassword(currentPassword);
+  if (!isMatch) {
+    throw new AppError('Current password is incorrect.', 400);
+  }
+
+  // 2. Prevent setting same password as before
+  const isSame = await user.comparePassword(newPassword);
+  if (isSame) {
+    throw new AppError('New password cannot be the same as your old password.', 400);
+  }
+
+  // Hash and save new password
+  user.passwordHash = await User.hashPassword(newPassword);
+  await user.save();
+
+  res.status(200).json({
+    success: true,
+    message: 'Password updated successfully.'
+  });
+};
+
 
 

@@ -12,10 +12,9 @@ const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-jet
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
 
-export const metadata: Metadata = {
-  title: 'Writen | Join the Conversation',
-  description: 'The leading space for technical narratives.',
-};
+import { generateSEO } from '@/lib/seo';
+
+export const metadata: Metadata = generateSEO();
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

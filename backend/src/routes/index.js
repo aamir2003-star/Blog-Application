@@ -2,6 +2,7 @@ import { Router } from 'express';
 import authRoutes from './auth.routes.js';
 import postRoutes from './post.routes.js';
 import uploadRoutes from './upload.routes.js';
+import searchRoutes from './search.routes.js';
 
 const router = Router();
 
@@ -12,10 +13,12 @@ const router = Router();
  * /api/auth  → Authentication (register, login, OAuth, refresh, logout, me)
  * /api/posts → Blog posts (CRUD, public feed, dashboard)
  * /api/uploads → Image uploads (Cloudinary)
+ * /api/search → Autocomplete search & history sync
  */
 router.use('/auth', authRoutes);
 router.use('/posts', postRoutes);
 router.use('/uploads', uploadRoutes);
+router.use('/search', searchRoutes);
 
 /**
  * GET /api/health

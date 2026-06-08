@@ -15,6 +15,8 @@ import {
   googleOneTap,
   forgotPassword,
   resetPassword,
+  updateProfile,
+  updatePasswordDirect,
 } from '../controllers/auth.controller.js';
 import { verifyToken } from '../middleware/auth.middleware.js';
 import { validate } from '../middleware/validate.middleware.js';
@@ -25,6 +27,8 @@ import {
   loginSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  updateProfileSchema,
+  updatePasswordDirectSchema,
 } from '../validators/auth.validators.js';
 
 const router = Router();
@@ -116,6 +120,13 @@ router.get('/me', verifyToken, getMe);
 
 /** PATCH /api/auth/settings */
 router.patch('/settings', verifyToken, updateSettings);
+
+/** PATCH /api/auth/profile */
+router.patch('/profile', verifyToken, validate(updateProfileSchema), updateProfile);
+
+/** PATCH /api/auth/profile/password */
+router.patch('/profile/password', verifyToken, validate(updatePasswordDirectSchema), updatePasswordDirect);
+
 
 // ─── Google OAuth ─────────────────────────────────────────────────────────────
 

@@ -266,14 +266,7 @@ export const getMyPosts = async (req, res) => {
       {
         $group: {
           _id: null,
-          totalViews: {
-            $sum: {
-              $max: [
-                { $ifNull: ['$totalViews', 0] },
-                { $ifNull: ['$views', 0] }
-              ]
-            }
-          },
+          totalViews: { $sum: { $ifNull: ['$totalViews', 0] } },
           publishedCount: { $sum: { $cond: [{ $eq: ['$status', 'PUBLISHED'] }, 1, 0] } },
           draftsCount: { $sum: { $cond: [{ $eq: ['$status', 'DRAFT'] }, 1, 0] } },
         },
@@ -528,7 +521,9 @@ export const recordPostView = async (req, res) => {
   }
 
   // Author Exclusion Rule
-  const authorIdStr = post.authorId.toString();
+  const authorIdStr = post.authorId?._id 
+    ? post.authorId._id.toString() 
+    : post.authorId.toString();
   if (viewerId === authorIdStr) {
     return res.status(200).json({
       success: true,
@@ -621,7 +616,9 @@ export const recordPostRead = async (req, res) => {
   }
 
   // Author Exclusion Rule
-  const authorIdStr = post.authorId.toString();
+  const authorIdStr = post.authorId?._id 
+    ? post.authorId._id.toString() 
+    : post.authorId.toString();
   if (viewerId === authorIdStr) {
     return res.status(200).json({
       success: true,

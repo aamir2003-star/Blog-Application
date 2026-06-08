@@ -3,36 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getPostsAction } from '@/app/actions/posts';
-
-// ─── Post Card Skeleton Loader ───────────────────────────────────────────────
-function PostCardSkeleton() {
-  return (
-    <div className="animate-pulse space-y-4">
-      <div className="flex items-center gap-3">
-        <div className="w-6 h-6 rounded-full bg-outline-variant/30"></div>
-        <div className="w-24 h-4 bg-outline-variant/30 rounded"></div>
-        <div className="w-2 h-4 bg-outline-variant/30 rounded"></div>
-        <div className="w-12 h-4 bg-outline-variant/30 rounded"></div>
-      </div>
-      <div className="flex gap-6">
-        <div className="flex-1 space-y-3">
-          <div className="h-6 bg-outline-variant/30 rounded w-5/6"></div>
-          <div className="h-4 bg-outline-variant/30 rounded w-full"></div>
-          <div className="h-4 bg-outline-variant/30 rounded w-full"></div>
-          <div className="h-4 bg-outline-variant/30 rounded w-2/3"></div>
-          <div className="flex items-center justify-between pt-2">
-            <div className="flex items-center gap-4">
-              <div className="w-20 h-6 bg-outline-variant/30 rounded-full"></div>
-              <div className="w-16 h-4 bg-outline-variant/30 rounded"></div>
-            </div>
-          </div>
-        </div>
-        <div className="w-[80px] h-[80px] xs:w-[120px] xs:h-[90px] sm:w-[160px] sm:h-[107px] bg-outline-variant/30 rounded-lg shrink-0"></div>
-      </div>
-      <div className="w-full h-px bg-outline-variant/10 pt-4"></div>
-    </div>
-  );
-}
+import PostCard from './PostCard';
+import PostCardSkeleton from './PostCardSkeleton';
 
 interface FeedPageClientProps {
   initialPosts: any[];
@@ -63,7 +35,6 @@ export default function FeedPageClient({
   useEffect(() => {
     setPosts(initialPosts);
     setPage(1);
-    // Determine if next page might exist based on count
     setHasNextPage(initialPosts.length >= 10);
   }, [initialPosts]);
 
@@ -98,28 +69,6 @@ export default function FeedPageClient({
     } finally {
       setLoadingMore(false);
     }
-  };
-
-  const calculateReadingTime = (htmlStr: string) => {
-    if (!htmlStr) return 1;
-    const text = htmlStr.replace(/<\/?[^>]+(>|$)/g, '');
-    const words = text.trim().split(/\s+/).length;
-    const minutes = Math.ceil(words / 200);
-    return minutes || 1;
-  };
-
-  const formatDate = (dateStr: string) => {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
-  const getAvatarFallback = (name: string) => {
-    if (!name) return 'U';
-    return name.charAt(0).toUpperCase();
   };
 
   return (
@@ -196,59 +145,13 @@ export default function FeedPageClient({
           </div>
         ) : (
           <>
-            {posts.map((post) => {
-              const author = post.authorId || {};
-              const readTime = calculateReadingTime(post.htmlContent);
-              const formattedDate = formatDate(post.createdAt);
-              
-              return (
-                <article 
-                  key={post._id} 
-                  onClick={() => router.push(`/feed/${post.slug}`)}
-                  className="group cursor-pointer"
-                >
-                  <div className="flex items-center gap-3 mb-3">
-                    {author.avatar ? (
-                      <img src={author.avatar} className="w-6 h-6 rounded-full object-cover" alt={author.name || 'Author'} />
-                    ) : (
-                      <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">
-                        {getAvatarFallback(author.name)}
-                      </div>
-                    )}
-                    <span className="font-body-md text-sm text-on-surface font-medium">{author.name || 'Anonymous'}</span>
-                    <span className="text-on-surface-variant text-sm">·</span>
-                    <span className="font-body-md text-sm text-on-surface-variant">{formattedDate}</span>
-                  </div>
-                  
-                  <div className="flex gap-6">
-                    <div className="flex-1">
-                      <h2 className="font-headline-lg text-2xl font-bold text-on-surface mb-2 group-hover:text-primary transition-colors line-clamp-2">
-                        {post.title}
-                      </h2>
-                      <p className="font-body-md text-on-surface-variant text-base line-clamp-3 mb-4 leading-relaxed">
-                        {post.excerpt || 'No description provided.'}
-                      </p>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          {post.category && (
-                            <span className="px-3 py-1 bg-surface-container-low text-on-surface rounded-full text-xs font-label-caps border border-outline-variant/20">{post.category}</span>
-                          )}
-                          <span className="font-body-md text-sm text-on-surface-variant">{readTime} min read</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {post.coverImage && (
-                      <div className="w-[80px] h-[80px] xs:w-[120px] xs:h-[90px] sm:w-[160px] sm:h-[107px] overflow-hidden rounded-lg border border-outline-variant/30 shrink-0 self-center sm:self-start">
-                        <img src={post.coverImage} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt="Article Cover" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="w-full h-px bg-outline-variant/20 mt-12"></div>
-                </article>
-              );
-            })}
+            {posts.map((post) => (
+              <PostCard 
+                key={post._id} 
+                post={post} 
+                onClick={() => router.push(`/feed/${post.slug}`)} 
+              />
+            ))}
 
             {/* Load More Trigger Button */}
             {hasNextPage && (

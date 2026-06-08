@@ -1,7 +1,15 @@
+import { Metadata } from 'next';
+import { generateSEO } from '@/lib/seo';
 import { cookies } from 'next/headers';
 import { redirect, notFound } from 'next/navigation';
 import TopNavBar from '@/components/layout/TopNavBar';
 import DashboardPageClient from '@/components/dashboard/DashboardPageClient';
+
+export const metadata: Metadata = generateSEO({
+  title: 'Creator Dashboard',
+  noIndex: true,
+});
+
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 

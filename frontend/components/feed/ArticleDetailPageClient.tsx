@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import ArticleContent from '@/components/feed/ArticleContent';
@@ -12,7 +12,13 @@ interface ArticleDetailPageClientProps {
 }
 
 export default function ArticleDetailPageClient({ post }: ArticleDetailPageClientProps) {
-  const { accessToken, loading: authLoading } = useAuth();
+  const { user, accessToken, loading: authLoading } = useAuth();
+  const [isBookmarked, setIsBookmarked] = useState(post?.isBookmarked || false);
+
+  // Sync state if the server post prop changes
+  useEffect(() => {
+    setIsBookmarked(post?.isBookmarked || false);
+  }, [post?._id, post?.isBookmarked]);
 
   // ── React Query Queries & Mutations ──
   const toggleBookmarkMutation = useToggleBookmarkMutation(accessToken);
@@ -21,10 +27,28 @@ export default function ArticleDetailPageClient({ post }: ArticleDetailPageClien
 
   const viewTracked = useRef<string | null>(null);
 
+  // Log SEO details to the console on mount for verification
+  useEffect(() => {
+    if (post) {
+      console.log('%c📄 [SEO Verification]', 'color: #006d38; font-weight: bold; font-size: 14px;');
+      console.log('Title:', post.title);
+      console.log('Description (Excerpt):', post.excerpt || 'None provided');
+      console.log('SEO Keywords:', post.seoKeywords || 'None provided');
+      console.log('------------------------------------');
+    }
+  }, [post]);
+
   // ── Telemetry Effects (View & Read) ──
   useEffect(() => {
     if (authLoading) return;
     if (!post?._id) return;
+
+    // Ignore views and reads for the author
+    const postAuthorId = typeof post.authorId === 'object' && post.authorId
+      ? post.authorId._id?.toString()
+      : post.authorId?.toString();
+    const isAuthor = user && postAuthorId && user._id.toString() === postAuthorId;
+    if (isAuthor) return;
 
     if (viewTracked.current === post._id) return;
     viewTracked.current = post._id;
@@ -86,11 +110,22 @@ export default function ArticleDetailPageClient({ post }: ArticleDetailPageClien
       clearInterval(interval);
       window.removeEventListener('scroll', onScroll);
     };
-  }, [post?._id, authLoading, accessToken]);
+  }, [post?._id, authLoading, accessToken, user]);
 
   const handleToggleBookmark = () => {
     if (post?._id) {
-      toggleBookmarkMutation.mutate(post._id);
+      const nextState = !isBookmarked;
+      setIsBookmarked(nextState);
+      toggleBookmarkMutation.mutate(post._id, {
+        onError: () => {
+          setIsBookmarked(!nextState);
+        },
+        onSuccess: (data) => {
+          if (data && typeof data.bookmarked === 'boolean') {
+            setIsBookmarked(data.bookmarked);
+          }
+        }
+      });
     }
   };
 
@@ -114,7 +149,7 @@ export default function ArticleDetailPageClient({ post }: ArticleDetailPageClien
         </Link>
         
         <ArticleContent
-          post={post}
+          post={{ ...post, isBookmarked }}
           onToggleBookmark={handleToggleBookmark}
           bookmarking={toggleBookmarkMutation.isPending}
         />

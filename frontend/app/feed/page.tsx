@@ -1,6 +1,14 @@
+import { Metadata } from 'next';
+import { generateSEO } from '@/lib/seo';
 import TopNavBar from '@/components/layout/TopNavBar';
 import SideNavBar from '@/components/layout/SideNavBar';
 import FeedPageClient from '@/components/feed/FeedPageClient';
+
+export const metadata: Metadata = generateSEO({
+  title: 'Feed | Tech & Engineering Stories',
+  path: '/feed',
+});
+
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 
