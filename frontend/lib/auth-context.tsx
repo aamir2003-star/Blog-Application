@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { apiClient, addRefreshSubscriber } from './api';
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
 const LAST_USER_KEY = 'blog_last_user';
@@ -95,13 +96,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUser = useCallback(async (token: string): Promise<User | null> => {
     try {
-      const res = await fetch(`${API}/auth/me`, {
+      const res = await apiClient.get('/auth/me', {
         headers: { Authorization: `Bearer ${token}` },
-        credentials: 'include',
       });
-      if (!res.ok) return null;
-      const data = await res.json();
-      return data.user;
+      return res.data.user;
     } catch {
       return null;
     }
@@ -112,16 +110,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const restoreSession = async () => {
       try {
-        const res = await fetch(`${API}/auth/refresh`, {
-          method: 'POST',
-          credentials: 'include',
-        });
-        if (res.ok) {
-          const data = await res.json();
-          // Session restored — log in immediately (no popup needed)
-          commitUser(data.user, data.accessToken);
-          return;
-        }
+        const res = await apiClient.post('/auth/refresh');
+        const data = res.data;
+        // Session restored — log in immediately (no popup needed)
+        commitUser(data.user, data.accessToken);
+        return;
       } catch { /* network error — treat as no session */ }
 
       // No active session — read the last-user snapshot to show the popup
@@ -132,6 +125,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     restoreSession();
   }, [commitUser]);
+
+  // Subscribe to background token refreshes to keep React state in sync
+  useEffect(() => {
+    const unsubscribe = addRefreshSubscriber((newToken) => {
+      setAccessToken(newToken);
+      fetchUser(newToken).then((u) => {
+        if (u) {
+          setUser(u);
+          saveLastUser(u);
+        }
+      });
+    });
+    return () => unsubscribe();
+  }, [fetchUser]);
 
   // When commitUser runs (session restored), we can stop loading
   useEffect(() => {
@@ -150,24 +157,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ── Login ─────────────────────────────────────────────────────────────────
 
   const login = async (email: string, password: string) => {
-    const res = await fetch(`${API}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ email, password }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Login failed');
-    commitUser(data.user, data.accessToken);
+    try {
+      const res = await apiClient.post('/auth/login', { email, password });
+      const data = res.data;
+      commitUser(data.user, data.accessToken);
+    } catch (err: any) {
+      const msg = err.response?.data?.message || err.message || 'Login failed';
+      throw new Error(msg);
+    }
   };
 
   // ── Logout ────────────────────────────────────────────────────────────────
 
   const logout = async () => {
-    await fetch(`${API}/auth/logout`, {
-      method: 'POST',
-      credentials: 'include',
-    });
+    try {
+      await apiClient.post('/auth/logout');
+    } catch { /* ignore */ }
     setAccessToken(null);
     setUser(null);
     // Keep lastUser so the popup re-appears next time they visit

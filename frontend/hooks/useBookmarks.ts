@@ -1,21 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+import { apiClient } from '../lib/api';
 
 // ─── Fetch User's Bookmarked Posts ───
-export function useBookmarksQuery(accessToken: string | null, initialData?: any[]) {
+export function useBookmarksQuery(accessToken?: string | null, initialData?: any[]) {
   return useQuery({
     queryKey: ['bookmarks', !!accessToken],
     enabled: !!accessToken,
     queryFn: async () => {
-      const res = await fetch(`${API_BASE}/posts/bookmarks/list`, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-      if (!res.ok) throw new Error('Failed to fetch bookmarks');
-      const resData = await res.json();
-      return resData.data as any[];
+      const res = await apiClient.get('/posts/bookmarks/list');
+      return res.data.data as any[];
     },
     initialData,
     staleTime: initialData ? Infinity : 0,
@@ -23,19 +16,12 @@ export function useBookmarksQuery(accessToken: string | null, initialData?: any[
 }
 
 // ─── Toggle Bookmark Status Mutation ───
-export function useToggleBookmarkMutation(accessToken: string | null) {
+export function useToggleBookmarkMutation(accessToken?: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (postId: string) => {
-      const res = await fetch(`${API_BASE}/posts/${postId}/bookmark`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Failed to toggle bookmark');
-      return data;
+      const res = await apiClient.post(`/posts/${postId}/bookmark`);
+      return res.data;
     },
     onSuccess: (_, postId) => {
       queryClient.invalidateQueries({ queryKey: ['bookmarks'] });
@@ -46,21 +32,12 @@ export function useToggleBookmarkMutation(accessToken: string | null) {
 }
 
 // ─── Update Bookmark Note Mutation ───
-export function useUpdateBookmarkNoteMutation(accessToken: string | null) {
+export function useUpdateBookmarkNoteMutation(accessToken?: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ postId, note }: { postId: string; note: string }) => {
-      const res = await fetch(`${API_BASE}/posts/${postId}/bookmark/note`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({ note }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Failed to update personal note');
-      return data;
+      const res = await apiClient.patch(`/posts/${postId}/bookmark/note`, { note });
+      return res.data;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['bookmarks'] });
@@ -70,19 +47,13 @@ export function useUpdateBookmarkNoteMutation(accessToken: string | null) {
 }
 
 // ─── Fetch User's Reading History ───
-export function useReadingHistoryQuery(accessToken: string | null, initialData?: any[]) {
+export function useReadingHistoryQuery(accessToken?: string | null, initialData?: any[]) {
   return useQuery({
     queryKey: ['readingHistory', !!accessToken],
     enabled: !!accessToken,
     queryFn: async () => {
-      const res = await fetch(`${API_BASE}/posts/history`, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-      if (!res.ok) throw new Error('Failed to fetch reading history');
-      const resData = await res.json();
-      return resData.data as any[];
+      const res = await apiClient.get('/posts/history');
+      return res.data.data as any[];
     },
     initialData,
     staleTime: initialData ? Infinity : 0,
@@ -90,23 +61,15 @@ export function useReadingHistoryQuery(accessToken: string | null, initialData?:
 }
 
 // ─── Delete Reading History Mutation ───
-export function useDeleteHistoryMutation(accessToken: string | null) {
+export function useDeleteHistoryMutation(accessToken?: string | null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (historyId: string) => {
-      const res = await fetch(`${API_BASE}/posts/history/${historyId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Failed to delete history entry');
-      return data;
+      const res = await apiClient.delete(`/posts/history/${historyId}`);
+      return res.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['readingHistory'] });
     },
   });
 }
-
