@@ -29,9 +29,9 @@ export function generateSEO({
   const finalTitle = title ? `${title} | Writen` : DEFAULT_TITLE;
   const finalDesc = description || DEFAULT_DESCRIPTION;
   const finalImage = image || DEFAULT_IMAGE;
-  const finalKeywords = [
-    ...new Set([...(keywords || []), ...DEFAULT_KEYWORDS]),
-  ];
+  const finalKeywords = keywords && keywords.length > 0
+    ? keywords
+    : DEFAULT_KEYWORDS;
 
   return {
     title: finalTitle,
