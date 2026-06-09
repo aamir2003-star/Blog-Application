@@ -4,57 +4,13 @@ import { useState, useEffect, FormEvent, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
+import { OtpInput } from '@/components/auth/OtpInput';
+import { apiClient } from '@/lib/api';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 const BACKEND = 'http://localhost:5001';
 
-// ─── OTP Segmented Input Component ───────────────────────────────────────────
-interface OtpInputProps {
-  value: string;
-  onChange: (v: string) => void;
-}
 
-function OtpInput({ value, onChange }: OtpInputProps) {
-  const inputs = useRef<(HTMLInputElement | null)[]>([]);
-  const digits = value.padEnd(6, ' ').split('').slice(0, 6);
-
-  const handleChange = (i: number, char: string) => {
-    const digit = char.replace(/\D/g, '').slice(-1);
-    const next = [...digits];
-    next[i] = digit === ' ' ? '' : digit;
-    onChange(next.join('').replace(/ /g, ''));
-    if (digit && i < 5) inputs.current[i + 1]?.focus();
-  };
-
-  const handleKeyDown = (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !digits[i] && i > 0) {
-      inputs.current[i - 1]?.focus();
-    }
-  };
-
-  return (
-    <div className="flex gap-2 justify-center">
-      {digits.map((d, i) => (
-        <input
-          key={i}
-          ref={(el) => { inputs.current[i] = el; }}
-          type="text"
-          inputMode="numeric"
-          maxLength={1}
-          value={d === ' ' ? '' : d}
-          onChange={(e) => handleChange(i, e.target.value)}
-          onKeyDown={(e) => handleKeyDown(i, e)}
-          className="
-            w-11 h-14 text-center font-display-xl text-xl
-            bg-white border border-outline-variant/50 rounded-lg text-on-surface
-            focus:border-primary focus:ring-2 focus:ring-primary/15 focus:outline-none
-            transition-all caret-primary
-          "
-        />
-      ))}
-    </div>
-  );
-}
 
 // ─── Icons ─────────────────────────────────────────────────────────────────
 function GoogleIcon() {
@@ -172,21 +128,12 @@ function LoginContent() {
     setForgotSuccess('');
     setForgotSubmitting(true);
     try {
-      const res = await fetch(`${API}/auth/forgot-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: forgotEmail }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || 'Failed to dispatch verification code');
-      }
+      const res = await apiClient.post('/auth/forgot-password', { email: forgotEmail });
+      const data = res.data;
       setForgotStep('otp');
       setForgotSuccess(data.message || 'We sent a 6-digit verification code to your email.');
-    } catch (err: unknown) {
-      setForgotError(err instanceof Error ? err.message : 'Something went wrong');
+    } catch (err: any) {
+      setForgotError(err.response?.data?.message || err.message || 'Something went wrong');
     } finally {
       setForgotSubmitting(false);
     }
@@ -201,27 +148,18 @@ function LoginContent() {
     setForgotSubmitting(true);
 
     try {
-      const res = await fetch(`${API}/auth/reset-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: forgotEmail,
-          otp: forgotOtp,
-          password: newPassword,
-        }),
+      const res = await apiClient.post('/auth/reset-password', {
+        email: forgotEmail,
+        otp: forgotOtp,
+        password: newPassword,
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || 'Failed to configure new password');
-      }
+      const data = res.data;
 
       setForgotStep('success');
       setForgotSuccess(data.message || 'Password successfully reset!');
-    } catch (err: unknown) {
-      setForgotError(err instanceof Error ? err.message : 'Something went wrong');
+    } catch (err: any) {
+      setForgotError(err.response?.data?.message || err.message || 'Something went wrong');
     } finally {
       setForgotSubmitting(false);
     }

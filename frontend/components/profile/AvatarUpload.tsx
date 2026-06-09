@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { User } from '@/lib/auth-context';
+import { apiClient } from '@/lib/api';
 
 interface AvatarUploadProps {
   user: User;
@@ -38,39 +39,20 @@ export default function AvatarUpload({ user, accessToken, refreshUser }: AvatarU
     formData.append('taskType', 'avatars');
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api'}/uploads/image`, {
-        method: 'POST',
+      const res = await apiClient.post('/uploads/image', formData, {
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'multipart/form-data',
         },
-        body: formData,
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || 'Failed to upload image to Cloudinary');
-      }
-
+      const data = res.data;
       if (data.success && data.url) {
-        const profileRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api'}/auth/profile`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({ avatar: data.url }),
-        });
-
-        const profileData = await profileRes.json();
-        if (!profileRes.ok) {
-          throw new Error(profileData.message || 'Failed to update user profile avatar.');
-        }
-
+        await apiClient.patch('/auth/profile', { avatar: data.url });
         await refreshUser();
         setSuccess('Profile picture updated successfully!');
       }
     } catch (err: any) {
-      setError(err.message || 'An error occurred during upload.');
+      setError(err.response?.data?.message || err.message || 'An error occurred during upload.');
     } finally {
       setUploading(false);
       if (fileInputRef.current) {

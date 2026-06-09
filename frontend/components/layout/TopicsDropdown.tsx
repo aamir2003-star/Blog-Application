@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { apiClient } from '@/lib/api';
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 const DEFAULT_TOPICS = ['JavaScript', 'TypeScript', 'React', 'Next.js', 'Node.js', 'Python', 'DevOps', 'Databases', 'Security', 'Algorithms'];
 
 export default function TopicsDropdown() {
@@ -20,8 +20,8 @@ export default function TopicsDropdown() {
     const fetchCategories = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`${API}/posts/categories`);
-        const data = await res.json();
+        const res = await apiClient.get('/posts/categories');
+        const data = res.data;
         if (data.success && Array.isArray(data.data) && data.data.length > 0) {
           setTopics(data.data);
         }

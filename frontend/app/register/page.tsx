@@ -4,6 +4,8 @@ import { useState, useEffect, FormEvent, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
+import { OtpInput } from '@/components/auth/OtpInput';
+import { apiClient } from '@/lib/api';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 const BACKEND = 'http://localhost:5001';
@@ -21,48 +23,7 @@ function GitHubIcon() {
   );
 }
 
-// ─── OTP Input ─────────────────────────────────────────────────────────────
-function OtpInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const inputs = useRef<(HTMLInputElement | null)[]>([]);
-  const digits = value.padEnd(6, ' ').split('').slice(0, 6);
 
-  const handleChange = (i: number, char: string) => {
-    const digit = char.replace(/\D/g, '').slice(-1);
-    const next = [...digits];
-    next[i] = digit === ' ' ? '' : digit;
-    onChange(next.join('').replace(/ /g, ''));
-    if (digit && i < 5) inputs.current[i + 1]?.focus();
-  };
-
-  const handleKeyDown = (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !digits[i] && i > 0) {
-      inputs.current[i - 1]?.focus();
-    }
-  };
-
-  return (
-    <div className="flex gap-2 justify-center">
-      {digits.map((d, i) => (
-        <input
-          key={i}
-          ref={(el) => { inputs.current[i] = el; }}
-          type="text"
-          inputMode="numeric"
-          maxLength={1}
-          value={d === ' ' ? '' : d}
-          onChange={(e) => handleChange(i, e.target.value)}
-          onKeyDown={(e) => handleKeyDown(i, e)}
-          className="
-            w-11 h-14 text-center font-display-xl text-xl
-            bg-white border border-outline-variant/50 rounded-lg text-on-surface
-            focus:border-primary focus:ring-2 focus:ring-primary/15 focus:outline-none
-            transition-all caret-primary
-          "
-        />
-      ))}
-    </div>
-  );
-}
 
 // ─── Page ──────────────────────────────────────────────────────────────────
 export default function RegisterPage() {
@@ -118,24 +79,17 @@ function RegisterContent() {
     setErrors([]);
     setSubmitting(true);
     try {
-      const res = await fetch(`${API}/auth/register/init`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        const msgs = data.errors
-          ? data.errors.map((err: any) => `${err.field}: ${err.message}`)
-          : [data.message];
-        setErrors(msgs);
-        return;
-      }
+      const res = await apiClient.post('/auth/register/init', { name, email, password });
+      const data = res.data;
       setPendingEmail(email);
       setResendCooldown(60);
       setStep('otp');
-    } catch {
-      setErrors(['Network error. Please try again.']);
+    } catch (err: any) {
+      const data = err.response?.data;
+      const msgs = data?.errors
+        ? data.errors.map((e: any) => `${e.field}: ${e.message}`)
+        : [data?.message || err.message || 'Network error. Please try again.'];
+      setErrors(msgs);
     } finally {
       setSubmitting(false);
     }
@@ -150,22 +104,14 @@ function RegisterContent() {
     setErrors([]);
     setSubmitting(true);
     try {
-      const res = await fetch(`${API}/auth/register/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ email: pendingEmail, otp }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setErrors([data.message]);
-        setOtp('');
-        return;
-      }
+      const res = await apiClient.post('/auth/register/verify', { email: pendingEmail, otp });
+      const data = res.data;
       await setTokenFromOAuth(data.accessToken);
       router.push('/onboarding');
-    } catch {
-      setErrors(['Network error. Please try again.']);
+    } catch (err: any) {
+      const data = err.response?.data;
+      setErrors([data?.message || err.message || 'Network error. Please try again.']);
+      setOtp('');
     } finally {
       setSubmitting(false);
     }
@@ -174,20 +120,12 @@ function RegisterContent() {
   const handleResend = async () => {
     setErrors([]);
     try {
-      const res = await fetch(`${API}/auth/register/resend`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: pendingEmail }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setErrors([data.message]);
-        return;
-      }
+      const res = await apiClient.post('/auth/register/resend', { email: pendingEmail });
       setOtp('');
       setResendCooldown(60);
-    } catch {
-      setErrors(['Could not resend code. Please try again.']);
+    } catch (err: any) {
+      const data = err.response?.data;
+      setErrors([data?.message || err.message || 'Could not resend code. Please try again.']);
     }
   };
 

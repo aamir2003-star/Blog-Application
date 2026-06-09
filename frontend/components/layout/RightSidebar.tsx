@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+import { apiClient } from '@/lib/api';
 
 const DEFAULT_TOPICS = ['JavaScript', 'TypeScript', 'React', 'Next.js', 'Node.js', 'Python', 'DevOps', 'Databases', 'Security', 'Algorithms'];
 
@@ -28,10 +27,10 @@ export default function RightSidebar({
       setLoading(true);
       try {
         // Fetch 1. Staff Picks (Top 3 Recent)
-        const staffPicksPromise = fetch(`${API}/posts?limit=3`).then(res => res.json());
+        const staffPicksPromise = apiClient.get('/posts?limit=3').then(res => res.data);
 
         // Fetch 2. Dynamic Categories
-        const categoriesPromise = fetch(`${API}/posts/categories`).then(res => res.json());
+        const categoriesPromise = apiClient.get('/posts/categories').then(res => res.data);
 
         const [picksData, catData] = await Promise.all([
           staffPicksPromise,

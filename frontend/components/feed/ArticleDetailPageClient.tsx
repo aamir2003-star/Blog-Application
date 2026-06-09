@@ -27,16 +27,7 @@ export default function ArticleDetailPageClient({ post }: ArticleDetailPageClien
 
   const viewTracked = useRef<string | null>(null);
 
-  // Log SEO details to the console on mount for verification
-  useEffect(() => {
-    if (post) {
-      console.log('%c📄 [SEO Verification]', 'color: #006d38; font-weight: bold; font-size: 14px;');
-      console.log('Title:', post.title);
-      console.log('Description (Excerpt):', post.excerpt || 'None provided');
-      console.log('SEO Keywords:', post.seoKeywords || 'None provided');
-      console.log('------------------------------------');
-    }
-  }, [post]);
+
 
   // ── Telemetry Effects (View & Read) ──
   useEffect(() => {

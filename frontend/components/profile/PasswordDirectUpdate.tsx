@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { apiClient } from '@/lib/api';
 
 interface PasswordDirectUpdateProps {
   accessToken: string | null;
@@ -34,26 +35,13 @@ export default function PasswordDirectUpdate({ accessToken }: PasswordDirectUpda
 
     setSaving(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api'}/auth/profile/password`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({ currentPassword, newPassword }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || 'Failed to update password.');
-      }
-
+      const res = await apiClient.patch('/auth/profile/password', { currentPassword, newPassword });
       setSuccess('Password updated successfully!');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmNewPassword('');
     } catch (err: any) {
-      setError(err.message || 'An error occurred.');
+      setError(err.response?.data?.message || err.message || 'An error occurred.');
     } finally {
       setSaving(false);
     }

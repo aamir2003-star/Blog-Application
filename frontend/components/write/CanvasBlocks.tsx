@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { apiClient } from '@/lib/api';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 
@@ -59,22 +60,20 @@ export function DualImageUploader({
     formData.append('taskType', 'blog_images');
 
     try {
-      const res = await fetch(`${API_BASE}/uploads/image`, {
-        method: 'POST',
+      const res = await apiClient.post('/uploads/image', formData, {
         headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
+          'Content-Type': 'multipart/form-data'
+        }
       });
-      const data = await res.json();
-      if (res.ok && data.success && data.url) {
+      const data = res.data;
+      if (data.success && data.url) {
         onChange(data.url);
       } else {
         setUploadError(data.message || 'Image upload failed.');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setUploadError('Failed to connect to backend upload portal.');
+      setUploadError(err.response?.data?.message || 'Failed to connect to backend upload portal.');
     } finally {
       setUploading(false);
     }

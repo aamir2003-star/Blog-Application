@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useGoogleOneTapLogin, CredentialResponse } from '@react-oauth/google';
+import { apiClient } from '@/lib/api';
 
 const API = process.env.NEXT_PUBLIC_API_URL!;
 
@@ -19,16 +20,13 @@ export default function GoogleOneTap() {
     onSuccess: async (credentialResponse: CredentialResponse) => {
       if (!credentialResponse.credential) return;
       try {
-        const res = await fetch(`${API}/auth/google/one-tap`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ credential: credentialResponse.credential }),
+        const res = await apiClient.post('/auth/google/one-tap', {
+          credential: credentialResponse.credential,
         });
 
-        const data = await res.json();
+        const data = res.data;
 
-        if (res.ok && data.success) {
+        if (data.success) {
           await setTokenFromOAuth(data.accessToken);
           const target = sessionStorage.getItem('auth_redirect') || '/onboarding';
           sessionStorage.removeItem('auth_redirect');
@@ -36,8 +34,8 @@ export default function GoogleOneTap() {
         } else {
           setError(data.message || 'Google login failed');
         }
-      } catch (err) {
-        setError('Google One-Tap request failed');
+      } catch (err: any) {
+        setError(err.response?.data?.message || 'Google One-Tap request failed');
       }
     },
     onError: () => setError('Google One-Tap failed'),

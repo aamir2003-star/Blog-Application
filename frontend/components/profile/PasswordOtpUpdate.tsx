@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { User } from '@/lib/auth-context';
+import { apiClient } from '@/lib/api';
 
 interface PasswordOtpUpdateProps {
   user: User;
@@ -37,24 +38,13 @@ export default function PasswordOtpUpdate({ user }: PasswordOtpUpdateProps) {
     setSuccess('');
     setSaving(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api'}/auth/forgot-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: user.email }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || 'Failed to dispatch verification code.');
-      }
-
+      const res = await apiClient.post('/auth/forgot-password', { email: user.email });
+      const data = res.data;
       setStep('verify');
       setResendCooldown(60);
       setSuccess('Verification code sent to your email.');
     } catch (err: any) {
-      setError(err.message || 'An error occurred.');
+      setError(err.response?.data?.message || err.message || 'An error occurred.');
     } finally {
       setSaving(false);
     }
@@ -77,30 +67,20 @@ export default function PasswordOtpUpdate({ user }: PasswordOtpUpdateProps) {
 
     setSaving(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api'}/auth/reset-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: user.email,
-          otp: code,
-          password: password,
-        }),
+      const res = await apiClient.post('/auth/reset-password', {
+        email: user.email,
+        otp: code,
+        password: password,
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || 'Failed to reset password.');
-      }
-
+      const data = res.data;
       setSuccess('Password updated successfully!');
       setCode('');
       setPassword('');
       setConfirmPassword('');
       setStep('request');
     } catch (err: any) {
-      setError(err.message || 'An error occurred.');
+      setError(err.response?.data?.message || err.message || 'An error occurred.');
     } finally {
       setSaving(false);
     }

@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import { verifyAccessToken } from '../utils/jwt.utils.js';
 import {
   getAllPublished,
   getBySlug,
@@ -18,7 +17,7 @@ import {
   getReadingHistory,
   deleteReadingHistoryEntry,
 } from '../controllers/post.controller.js';
-import { verifyToken } from '../middleware/auth.middleware.js';
+import { verifyToken, optionalAuth } from '../middleware/auth.middleware.js';
 import { validate } from '../middleware/validate.middleware.js';
 import {
   createPostSchema,
@@ -33,27 +32,7 @@ import {
 
 const router = Router();
 
-// ─── Optional Auth Helper ─────────────────────────────────────────────────────
 
-/**
- * Soft authentication — tries to verify the token if present,
- * but does NOT reject the request if there is no token.
- * Allows public visitors AND authenticated authors to hit the same endpoint.
- */
-function optionalAuth(req, _res, next) {
-  try {
-    const authHeader = req.headers.authorization;
-    if (authHeader?.startsWith('Bearer ')) {
-      const token = authHeader.split(' ')[1];
-      const decoded = verifyAccessToken(token);
-      req.user = { _id: decoded.sub, role: decoded.role, email: decoded.email };
-    }
-  } catch {
-    // Silently ignore invalid/expired tokens for optional auth
-    req.user = null;
-  }
-  next();
-}
 
 // ─── Public Routes (No Auth Required) ────────────────────────────────────────
 

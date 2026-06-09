@@ -59,3 +59,31 @@ export const verifyToken = (req, res, next) => {
     });
   }
 };
+
+/**
+ * optionalAuth — Soft authentication middleware
+ *
+ * Tries to verify the token if present, but does NOT reject
+ * the request if there is no token or if it is expired.
+ * Attaches the user object or sets req.user to null.
+ */
+export const optionalAuth = (req, _res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      const decoded = verifyAccessToken(token);
+      req.user = {
+        _id: decoded.sub,
+        role: decoded.role,
+        email: decoded.email,
+      };
+    } else {
+      req.user = null;
+    }
+  } catch {
+    // Silently ignore invalid/expired tokens for optional auth
+    req.user = null;
+  }
+  next();
+};

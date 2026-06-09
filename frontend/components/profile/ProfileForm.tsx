@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { User } from '@/lib/auth-context';
+import { apiClient } from '@/lib/api';
 
 interface ProfileFormProps {
   user: User;
@@ -34,24 +35,11 @@ export default function ProfileForm({ user, accessToken, refreshUser }: ProfileF
 
     setSaving(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api'}/auth/profile`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({ name: name.trim() }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.message || 'Failed to update user profile name.');
-      }
-
+      const res = await apiClient.patch('/auth/profile', { name: name.trim() });
       await refreshUser();
       setSuccess('Profile name updated successfully!');
     } catch (err: any) {
-      setError(err.message || 'An error occurred.');
+      setError(err.response?.data?.message || err.message || 'An error occurred.');
     } finally {
       setSaving(false);
     }
