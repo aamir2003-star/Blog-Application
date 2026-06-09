@@ -1,5 +1,20 @@
 'use client';
 
+import dynamic from 'next/dynamic';
+
+const PDFDownloadButton = dynamic(() => import('./PDFDownloadButton'), {
+  ssr: false,
+  loading: () => (
+    <button
+      disabled
+      className="flex items-center gap-1.5 px-2.5 py-1 rounded-full opacity-50 cursor-not-allowed border-none bg-transparent text-on-surface-variant select-none animate-pulse"
+    >
+      <span className="material-symbols-outlined text-[18px]">download</span>
+      <span className="text-xs font-semibold font-label-caps uppercase tracking-wider">PDF</span>
+    </button>
+  ),
+});
+
 interface ArticleContentProps {
   post: any;
   onToggleBookmark: () => void;
@@ -101,6 +116,8 @@ export default function ArticleContent({
               {post.isBookmarked ? 'Saved' : 'Save'}
             </span>
           </button>
+          <span className="text-outline-variant/40 select-none">|</span>
+          <PDFDownloadButton post={post} />
         </div>
       </div>
 

@@ -8,7 +8,7 @@ import { OtpInput } from '@/components/auth/OtpInput';
 import { apiClient } from '@/lib/api';
 
 const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
-const BACKEND = 'http://localhost:5001';
+const BACKEND = typeof window !== 'undefined' ? '' : (process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5001');
 
 // ─── Icons ─────────────────────────────────────────────────────────────────
 function GoogleIcon() {
