@@ -33,9 +33,9 @@ export default function PDFDownloadButton({ post }: PDFDownloadButtonProps) {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to generate PDF document:', error);
-      alert('Failed to generate PDF copy. Please try again.');
+      alert(`Failed to generate PDF copy: ${error?.message || error}`);
     } finally {
       setIsGenerating(false);
     }

@@ -119,14 +119,25 @@ const styles = StyleSheet.create({
     borderBottomColor: '#bbcabb',
     marginVertical: 12,
   },
+  blockquote: {
+    borderLeftWidth: 3,
+    borderLeftColor: '#006d38',
+    paddingLeft: 10,
+    marginVertical: 10,
+  },
+  blockquoteText: {
+    fontFamily: 'Helvetica-Oblique',
+    color: '#3d4a3e',
+  },
 });
 
 /**
- * Helper to recursively parse and render text nodes with inline styles (b, i, code).
+ * Helper to recursively parse and render text nodes with inline styles (b, i, code, a).
+ * Filters out null values so we do not pass invalid nodes to React-PDF <Text>.
  */
 const renderTextWithInlineStyles = (node: Node, index: number): React.ReactNode => {
   if (node.nodeType === Node.TEXT_NODE) {
-    return node.textContent;
+    return node.textContent || '';
   }
   
   if (node.nodeType === Node.ELEMENT_NODE) {
@@ -144,12 +155,18 @@ const renderTextWithInlineStyles = (node: Node, index: number): React.ReactNode 
       style.fontFamily = 'Courier';
       style.backgroundColor = '#eeeeec';
     }
+    if (tagName === 'a') {
+      style.color = '#005228';
+      style.textDecoration = 'underline';
+    }
+    
+    const children = Array.from(element.childNodes)
+      .map((child, idx) => renderTextWithInlineStyles(child, idx))
+      .filter((c): c is React.ReactNode => c !== null && c !== undefined);
     
     return (
       <Text key={index} style={style}>
-        {Array.from(element.childNodes).map((child, idx) => 
-          renderTextWithInlineStyles(child, idx)
-        )}
+        {children}
       </Text>
     );
   }
@@ -162,7 +179,7 @@ const renderTextWithInlineStyles = (node: Node, index: number): React.ReactNode 
  * and outputs an array of React-PDF components.
  */
 const parseHtmlToPdfComponents = (html: string) => {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === 'undefined' || !html) return [];
   
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
@@ -177,59 +194,71 @@ const parseHtmlToPdfComponents = (html: string) => {
     const tagName = element.tagName.toLowerCase();
     
     if (tagName === 'p') {
+      const children = Array.from(element.childNodes)
+        .map((child, idx) => renderTextWithInlineStyles(child, idx))
+        .filter((c): c is React.ReactNode => c !== null && c !== undefined);
+
       components.push(
         <Text key={index} style={styles.paragraph}>
-          {Array.from(element.childNodes).map((child, idx) => 
-            renderTextWithInlineStyles(child, idx)
-          )}
+          {children}
         </Text>
       );
     } else if (tagName === 'h1' || tagName === 'h2') {
+      const children = Array.from(element.childNodes)
+        .map((child, idx) => renderTextWithInlineStyles(child, idx))
+        .filter((c): c is React.ReactNode => c !== null && c !== undefined);
+
       components.push(
         <Text key={index} style={styles.heading1}>
-          {Array.from(element.childNodes).map((child, idx) => 
-            renderTextWithInlineStyles(child, idx)
-          )}
+          {children}
         </Text>
       );
     } else if (tagName === 'h3' || tagName === 'h4' || tagName === 'h5' || tagName === 'h6') {
+      const children = Array.from(element.childNodes)
+        .map((child, idx) => renderTextWithInlineStyles(child, idx))
+        .filter((c): c is React.ReactNode => c !== null && c !== undefined);
+
       components.push(
         <Text key={index} style={styles.heading2}>
-          {Array.from(element.childNodes).map((child, idx) => 
-            renderTextWithInlineStyles(child, idx)
-          )}
+          {children}
         </Text>
       );
     } else if (tagName === 'ul') {
       components.push(
         <View key={index} style={styles.list}>
-          {Array.from(element.children).map((li, liIdx) => (
-            <View key={liIdx} style={styles.listItem}>
-              {/* Bullet symbol */}
-              <Text style={styles.listBullet}>•</Text>
-              <Text style={styles.listContent}>
-                {Array.from(li.childNodes).map((child, idx) => 
-                  renderTextWithInlineStyles(child, idx)
-                )}
-              </Text>
-            </View>
-          ))}
+          {Array.from(element.children).map((li, liIdx) => {
+            const children = Array.from(li.childNodes)
+              .map((child, idx) => renderTextWithInlineStyles(child, idx))
+              .filter((c): c is React.ReactNode => c !== null && c !== undefined);
+
+            return (
+              <View key={liIdx} style={styles.listItem}>
+                <Text style={styles.listBullet}>•</Text>
+                <Text style={styles.listContent}>
+                  {children}
+                </Text>
+              </View>
+            );
+          })}
         </View>
       );
     } else if (tagName === 'ol') {
       components.push(
         <View key={index} style={styles.list}>
-          {Array.from(element.children).map((li, liIdx) => (
-            <View key={liIdx} style={styles.listItem}>
-              {/* Ordered bullet list numbers */}
-              <Text style={styles.listBullet}>{`${liIdx + 1}.`}</Text>
-              <Text style={styles.listContent}>
-                {Array.from(li.childNodes).map((child, idx) => 
-                  renderTextWithInlineStyles(child, idx)
-                )}
-              </Text>
-            </View>
-          ))}
+          {Array.from(element.children).map((li, liIdx) => {
+            const children = Array.from(li.childNodes)
+              .map((child, idx) => renderTextWithInlineStyles(child, idx))
+              .filter((c): c is React.ReactNode => c !== null && c !== undefined);
+
+            return (
+              <View key={liIdx} style={styles.listItem}>
+                <Text style={styles.listBullet}>{`${liIdx + 1}.`}</Text>
+                <Text style={styles.listContent}>
+                  {children}
+                </Text>
+              </View>
+            );
+          })}
         </View>
       );
     } else if (tagName === 'pre') {
@@ -250,6 +279,18 @@ const parseHtmlToPdfComponents = (html: string) => {
     } else if (tagName === 'hr') {
       components.push(
         <View key={index} style={styles.hr} />
+      );
+    } else if (tagName === 'blockquote') {
+      const children = Array.from(element.childNodes)
+        .map((child, idx) => renderTextWithInlineStyles(child, idx))
+        .filter((c): c is React.ReactNode => c !== null && c !== undefined);
+
+      components.push(
+        <View key={index} style={styles.blockquote}>
+          <Text style={styles.blockquoteText}>
+            {children}
+          </Text>
+        </View>
       );
     }
   });
