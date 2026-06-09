@@ -333,14 +333,48 @@ export default function WritePage() {
               onAddMetadataBlock={handleMetadataBlockAction}
             />
 
-            {Object.keys(errors).some(k => k.startsWith('block_')) && (
-              <div className="my-6 p-4 bg-error-container/20 border border-error/20 rounded-xl space-y-2 select-none">
-                <p className="text-xs uppercase font-label-caps text-error tracking-wider font-semibold flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-[16px]">warning</span>
-                  Missing or Invalid Elements
-                </p>
-                <ul className="text-xs text-on-surface-variant space-y-1 pl-4 list-disc font-body-md">
-                  {Object.keys(errors).map((k) => k.startsWith('block_') ? <li key={k} className="text-error/90 font-medium">{errors[k]}</li> : null)}
+            {/* ── Publish Validation Checklist ────────────────────────────────────
+                Shows when there are any errors (block missing, canvas empty, etc.)
+                Uses plain language so any user can understand what to fix.
+            */}
+            {Object.keys(errors).some(k => k.startsWith('block_') || k === 'canvas') && (
+              <div className="my-6 p-5 bg-error-container/15 border border-error/25 rounded-2xl select-none space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-error text-[20px]">checklist</span>
+                  <p className="text-sm font-semibold text-error">
+                    A few things are needed before you can publish:
+                  </p>
+                </div>
+                <ul className="space-y-2">
+                  {/* Canvas / body error */}
+                  {errors.canvas && (
+                    <li className="flex items-start gap-2.5 text-sm">
+                      <span className="material-symbols-outlined text-[16px] text-error shrink-0 mt-0.5">edit_note</span>
+                      <span className="text-on-surface-variant font-medium">{errors.canvas}</span>
+                    </li>
+                  )}
+                  {/* Missing metadata blocks */}
+                  {(['block_category', 'block_coverImage', 'block_excerpt', 'block_keywords'] as const).map(key =>
+                    errors[key] ? (
+                      <li key={key} className="flex items-start gap-2.5 text-sm">
+                        <span className="material-symbols-outlined text-[16px] text-amber-500 shrink-0 mt-0.5">add_circle</span>
+                        <span className="text-on-surface-variant font-medium">
+                          {errors[key]}
+                          <span className="ml-1.5 text-xs text-on-surface-variant/60 font-normal">(click&nbsp;+ Add below to add it)</span>
+                        </span>
+                      </li>
+                    ) : null
+                  )}
+                  {/* Empty image blocks */}
+                  {Object.keys(errors)
+                    .filter(k => k.startsWith('block_') && !['block_category','block_coverImage','block_excerpt','block_keywords'].includes(k))
+                    .map(k => (
+                      <li key={k} className="flex items-start gap-2.5 text-sm">
+                        <span className="material-symbols-outlined text-[16px] text-error shrink-0 mt-0.5">image</span>
+                        <span className="text-on-surface-variant font-medium">{errors[k]}</span>
+                      </li>
+                    ))
+                  }
                 </ul>
               </div>
             )}
