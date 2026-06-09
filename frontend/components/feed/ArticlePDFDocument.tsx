@@ -18,7 +18,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 30,
     left: 50,
-    right: 50,
+    width: 495,
     fontSize: 8,
     color: '#5f5e5e',
   },
@@ -26,7 +26,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 30,
     left: 50,
-    right: 50,
+    width: 495,
     fontSize: 8,
     color: '#5f5e5e',
   },
@@ -82,21 +82,24 @@ const styles = StyleSheet.create({
   listContent: {
     flex: 1,
   },
-  codeBlock: {
-    fontFamily: 'Courier',
-    fontSize: 8.5,
+  codeContainer: {
     backgroundColor: '#f4f4f2',
     padding: 8,
     marginBottom: 8,
-    lineHeight: 1.35,
+    width: 495,
+  },
+  codeLine: {
+    fontFamily: 'Courier',
+    fontSize: 8,
+    lineHeight: 1.3,
   },
   coverImage: {
-    width: '100%',
+    width: 495,
     height: 180,
     marginBottom: 16,
   },
   inlineImage: {
-    width: '100%',
+    width: 495,
     height: 150,
     marginVertical: 10,
   },
@@ -257,10 +260,15 @@ const parseHtmlToPdfComponents = (html: string) => {
     } else if (tagName === 'pre') {
       const codeNode = element.querySelector('code');
       const codeText = codeNode ? codeNode.textContent : element.textContent;
+      const codeLines = (codeText || '').split('\n');
       components.push(
-        <Text key={index} style={styles.codeBlock}>
-          {codeText || ''}
-        </Text>
+        <View key={index} style={styles.codeContainer}>
+          {codeLines.map((line, lineIdx) => (
+            <Text key={lineIdx} style={styles.codeLine}>
+              {line}
+            </Text>
+          ))}
+        </View>
       );
     } else if (tagName === 'img') {
       const src = element.getAttribute('src');

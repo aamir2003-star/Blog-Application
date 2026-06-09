@@ -64,7 +64,7 @@ export default function ArticleContent({
       </h1>
 
       {/* Author Profile Metadata Row */}
-      <div className="flex items-center justify-between border-y border-outline-variant/30 py-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-y border-outline-variant/30 py-4">
         <div className="flex items-center gap-3">
           {post.authorId?.avatar ? (
             <img 
@@ -92,12 +92,12 @@ export default function ArticleContent({
           </div>
         </div>
 
-        <div className="flex items-center gap-4 text-on-surface-variant text-sm font-medium">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-on-surface-variant text-sm font-medium">
           <div className="flex items-center gap-1.5">
             <span className="material-symbols-outlined text-[18px]">visibility</span>
             <span>{post.totalViews ?? post.views ?? 0} views</span>
           </div>
-          <span className="text-outline-variant/40 select-none">|</span>
+          <span className="hidden sm:inline-block text-outline-variant/40 select-none">|</span>
           <button
             onClick={onToggleBookmark}
             disabled={bookmarking}
@@ -116,7 +116,7 @@ export default function ArticleContent({
               {post.isBookmarked ? 'Saved' : 'Save'}
             </span>
           </button>
-          <span className="text-outline-variant/40 select-none">|</span>
+          <span className="hidden sm:inline-block text-outline-variant/40 select-none">|</span>
           <PDFDownloadButton post={post} />
         </div>
       </div>
