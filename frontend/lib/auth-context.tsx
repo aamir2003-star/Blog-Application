@@ -78,9 +78,24 @@ const removeLastUser = () => {
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser]               = useState<User | null>(null);
+  const [user, setUser]               = useState<User | null>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('writen_user');
+        return raw ? JSON.parse(raw) : null;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
   const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [loading, setLoading]         = useState(true);
+  const [loading, setLoading]         = useState(() => {
+    if (typeof window !== 'undefined') {
+      return !localStorage.getItem('writen_user');
+    }
+    return true;
+  });
   const [lastUser, setLastUser]       = useState<LastUserSnapshot | null>(null);
 
   // ── Commit a user into state + persist their snapshot ────────────────────
@@ -88,6 +103,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const commitUser = useCallback((u: User, token: string) => {
     setAccessToken(token);
     setUser(u);
+    try {
+      localStorage.setItem('writen_user', JSON.stringify(u));
+    } catch {}
     setLastUser(null);   // hide the popup once they're logged in
     saveLastUser(u);     // update the snapshot for next visit
   }, []);
@@ -115,7 +133,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Session restored — log in immediately (no popup needed)
         commitUser(data.user, data.accessToken);
         return;
-      } catch { /* network error — treat as no session */ }
+      } catch {
+        /* network error — treat as no session */
+        setUser(null);
+        setAccessToken(null);
+        try {
+          localStorage.removeItem('writen_user');
+        } catch {}
+      }
 
       // No active session — read the last-user snapshot to show the popup
       const snapshot = loadLastUser();
@@ -175,6 +200,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch { /* ignore */ }
     setAccessToken(null);
     setUser(null);
+    try {
+      localStorage.removeItem('writen_user');
+    } catch {}
     // Keep lastUser so the popup re-appears next time they visit
   };
 

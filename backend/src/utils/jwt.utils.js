@@ -94,8 +94,8 @@ export const verifyRefreshToken = (token) => {
  */
 export const refreshCookieOptions = {
   httpOnly: true,
-  secure: process.env.COOKIE_SECURE === 'true',
-  sameSite: process.env.COOKIE_SAME_SITE || 'lax',
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax',
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
   path: '/api/auth', // Cookie only sent to /api/auth/* endpoints
 };
@@ -105,7 +105,7 @@ export const refreshCookieOptions = {
  */
 export const clearCookieOptions = {
   httpOnly: true,
-  secure: process.env.COOKIE_SECURE === 'true',
-  sameSite: process.env.COOKIE_SAME_SITE || 'lax',
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'lax',
   path: '/api/auth',
 };

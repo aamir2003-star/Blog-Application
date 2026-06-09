@@ -91,11 +91,10 @@ apiClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
-        
-        // Execute refresh using a clean axios call to avoid request interceptors
+        // Execute refresh using a clean axios call to `/api/auth/refresh` (proxied relative path)
+        // This ensures the browser sends the first-party cookie stored on the Vercel domain.
         const refreshResponse = await axios.post(
-          `${API_BASE}/auth/refresh`,
+          '/api/auth/refresh',
           {},
           { withCredentials: true }
         );
