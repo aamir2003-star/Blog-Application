@@ -1,9 +1,9 @@
-'use client';
-
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 
-// Define stable PDF styles matching the Writen branding
+// A4 page usable width: 595 - 2*50 = 495pt
+const PAGE_WIDTH = 495;
+
 const styles = StyleSheet.create({
   page: {
     paddingTop: 65,
@@ -14,26 +14,57 @@ const styles = StyleSheet.create({
     fontFamily: 'Helvetica',
     color: '#1a1c1b',
   },
+  // ── Fixed header / footer: NEVER use justifyContent:'space-between' inside
+  // fixed+absolute views – it causes the -9.44e21 translate crash in react-pdf.
+  // Instead we use two sibling Text nodes with explicit widths that add up to PAGE_WIDTH.
   header: {
     position: 'absolute',
     top: 30,
     left: 50,
-    width: 495,
+    width: PAGE_WIDTH,
     fontSize: 8,
     color: '#5f5e5e',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    width: PAGE_WIDTH,
+    marginBottom: 4,
+  },
+  headerLeft: {
+    width: 275,
+    fontSize: 8,
+  },
+  headerRight: {
+    width: 220,
+    fontSize: 8,
+    textAlign: 'right',
   },
   footer: {
     position: 'absolute',
     bottom: 30,
     left: 50,
-    width: 495,
+    width: PAGE_WIDTH,
     fontSize: 8,
     color: '#5f5e5e',
+  },
+  footerRow: {
+    flexDirection: 'row',
+    width: PAGE_WIDTH,
+    marginTop: 4,
+  },
+  footerLeft: {
+    width: 248,
+    fontSize: 8,
+  },
+  footerRight: {
+    width: 247,
+    fontSize: 8,
+    textAlign: 'right',
   },
   divider: {
     height: 0.5,
     backgroundColor: '#bbcabb',
-    width: '100%',
+    width: PAGE_WIDTH,
   },
   title: {
     fontSize: 22,
@@ -44,7 +75,6 @@ const styles = StyleSheet.create({
   },
   authorRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     marginBottom: 8,
     fontSize: 9,
     color: '#5f5e5e',
@@ -80,13 +110,14 @@ const styles = StyleSheet.create({
     fontSize: 10,
   },
   listContent: {
-    flex: 1,
+    // Use explicit width instead of flex:1 to avoid overflow calc issues
+    width: PAGE_WIDTH - 24,
   },
   codeContainer: {
     backgroundColor: '#f4f4f2',
     padding: 8,
     marginBottom: 8,
-    width: 495,
+    width: PAGE_WIDTH,
   },
   codeLine: {
     fontFamily: 'Courier',
@@ -94,31 +125,34 @@ const styles = StyleSheet.create({
     lineHeight: 1.3,
   },
   coverImage: {
-    width: 495,
+    width: PAGE_WIDTH,
     height: 180,
     marginBottom: 16,
+    objectFit: 'cover',
   },
   inlineImage: {
-    width: 495,
+    width: PAGE_WIDTH,
     height: 150,
     marginVertical: 10,
+    objectFit: 'cover',
   },
   hr: {
     height: 0.5,
     backgroundColor: '#bbcabb',
     marginVertical: 12,
-    width: '100%',
+    width: PAGE_WIDTH,
   },
   blockquote: {
     flexDirection: 'row',
     marginVertical: 10,
+    width: PAGE_WIDTH,
   },
   blockquoteBar: {
     width: 3,
     backgroundColor: '#006d38',
   },
   blockquoteContent: {
-    flex: 1,
+    width: PAGE_WIDTH - 13,
     paddingLeft: 10,
   },
   blockquoteText: {
@@ -135,12 +169,12 @@ const renderTextWithInlineStyles = (node: Node, index: number): React.ReactNode 
   if (node.nodeType === Node.TEXT_NODE) {
     return node.textContent || '';
   }
-  
+
   if (node.nodeType === Node.ELEMENT_NODE) {
     const element = node as Element;
     const tagName = element.tagName.toLowerCase();
-    
-    const style: any = {};
+
+    const style: Record<string, string> = {};
     if (tagName === 'strong' || tagName === 'b') {
       style.fontFamily = 'Helvetica-Bold';
     }
@@ -155,40 +189,45 @@ const renderTextWithInlineStyles = (node: Node, index: number): React.ReactNode 
       style.color = '#005228';
       style.textDecoration = 'underline';
     }
-    
+
     const children = Array.from(element.childNodes)
       .map((child, idx) => renderTextWithInlineStyles(child, idx))
       .filter((c): c is React.ReactNode => c !== null && c !== undefined);
-    
+
     return (
       <Text key={index} style={style}>
         {children}
       </Text>
     );
   }
-  
+
   return null;
 };
 
 /**
- * Main HTML-to-PDF parser: parses the raw HTML string using browser DOMParser 
+ * Main HTML-to-PDF parser: parses the raw HTML string using browser DOMParser
  * and outputs an array of React-PDF components.
+ *
+ * Key rules to avoid the -9.44e21 crash:
+ *  - Never use justifyContent:'space-between' inside fixed/absolute views.
+ *  - Never use flex:1 inside fixed/absolute views; use explicit widths instead.
+ *  - Never use percentage widths ('100%') inside flex children of absolute containers.
  */
-const parseHtmlToPdfComponents = (html: string) => {
+const parseHtmlToPdfComponents = (html: string): React.ReactNode[] => {
   if (typeof window === 'undefined' || !html) return [];
-  
+
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
   const body = doc.body;
-  
+
   const components: React.ReactNode[] = [];
-  
+
   Array.from(body.childNodes).forEach((node, index) => {
     if (node.nodeType !== Node.ELEMENT_NODE) return;
-    
+
     const element = node as Element;
     const tagName = element.tagName.toLowerCase();
-    
+
     if (tagName === 'p') {
       const children = Array.from(element.childNodes)
         .map((child, idx) => renderTextWithInlineStyles(child, idx))
@@ -265,7 +304,7 @@ const parseHtmlToPdfComponents = (html: string) => {
         <View key={index} style={styles.codeContainer}>
           {codeLines.map((line, lineIdx) => (
             <Text key={lineIdx} style={styles.codeLine}>
-              {line}
+              {line || ' '}
             </Text>
           ))}
         </View>
@@ -298,7 +337,7 @@ const parseHtmlToPdfComponents = (html: string) => {
       );
     }
   });
-  
+
   return components;
 };
 
@@ -308,24 +347,38 @@ interface ArticlePDFDocumentProps {
 
 /**
  * Declarative Document Layout.
+ *
+ * IMPORTANT: This component must NOT have 'use client' – it is always imported
+ * dynamically (ssr:false) from PDFDownloadButton, so it runs only in the browser.
+ * The 'use client' directive causes a React hydration mismatch (#418) because the
+ * server never renders this file yet the directive tells React it must match.
  */
 export function ArticlePDFDocument({ post }: ArticlePDFDocumentProps) {
-  const formattedDate = post.createdAt ? new Date(post.createdAt).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  }) : '';
+  const formattedDate = post.createdAt
+    ? new Date(post.createdAt).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
+    : '';
+
+  const truncatedTitle =
+    post.title && post.title.length > 45
+      ? post.title.substring(0, 45) + '…'
+      : post.title || '';
 
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Recurring Header */}
+        {/* ── Recurring Header ──────────────────────────────────────────────────
+            Uses sibling Text nodes with explicit widths (275 + 220 = 495) instead
+            of justifyContent:'space-between', which crashes the PDF engine in v4.x
+            when used inside fixed+absolute views.
+        */}
         <View style={styles.header} fixed>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginBottom: 4 }}>
-            <Text>Writen | Sharing Engineering Voice</Text>
-            <Text style={{ maxWidth: 220 }}>
-              {post.title && post.title.length > 40 ? post.title.substring(0, 40) + '...' : post.title}
-            </Text>
+          <View style={styles.headerRow}>
+            <Text style={styles.headerLeft}>Writen | Sharing Engineering Voice</Text>
+            <Text style={styles.headerRight}>{truncatedTitle}</Text>
           </View>
           <View style={styles.divider} />
         </View>
@@ -338,23 +391,28 @@ export function ArticlePDFDocument({ post }: ArticlePDFDocumentProps) {
         {/* Article Title */}
         <Text style={styles.title}>{post.title}</Text>
 
-        {/* Post Metadata Card */}
+        {/* Post Metadata */}
         <View style={styles.authorRow}>
           <Text>{`By ${post.authorId?.name || 'Anonymous'}  •  Published ${formattedDate}  •  ${post.category || 'General'}`}</Text>
         </View>
         <View style={styles.hr} />
 
-        {/* HTML Parsed Document Content blocks */}
+        {/* HTML Parsed Document Content */}
         <View>
           {parseHtmlToPdfComponents(post.htmlContent)}
         </View>
 
-        {/* Recurring Footer with Page Numbers */}
+        {/* ── Recurring Footer ──────────────────────────────────────────────────
+            Same fix: explicit widths (248 + 247 = 495) instead of space-between.
+        */}
         <View style={styles.footer} fixed>
           <View style={styles.divider} />
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 4 }}>
-            <Text>writen.com</Text>
-            <Text render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
+          <View style={styles.footerRow}>
+            <Text style={styles.footerLeft}>writen.com</Text>
+            <Text
+              style={styles.footerRight}
+              render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
+            />
           </View>
         </View>
       </Page>
