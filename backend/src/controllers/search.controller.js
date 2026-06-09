@@ -13,7 +13,7 @@ const PREDEFINED_CATEGORIES = [
  * Retrieve auto-complete suggestions matching titles, categories, and authors.
  */
 export const getSuggestions = async (req, res) => {
-  const { q } = req.query;
+  const { q, category } = req.query;
 
   if (!q || !q.trim()) {
     return res.status(200).json({ success: true, data: [] });
@@ -22,11 +22,16 @@ export const getSuggestions = async (req, res) => {
   const queryStr = q.trim();
 
   // 1. Fetch matching published posts
-  const postsPromise = Post.find({
+  const postFilter = {
     deleted: { $ne: true },
     status: 'PUBLISHED',
     title: { $regex: queryStr, $options: 'i' }
-  })
+  };
+  if (category) {
+    postFilter.category = { $regex: new RegExp(`^${category}$`, 'i') };
+  }
+
+  const postsPromise = Post.find(postFilter)
     .select('title slug')
     .limit(5);
 
@@ -50,9 +55,16 @@ export const getSuggestions = async (req, res) => {
     usedCategoriesPromise
   ]);
 
-  // Filter categories
-  const matchedCategories = PREDEFINED_CATEGORIES.concat(usedCategories)
-    .filter(cat => cat.toLowerCase().includes(queryStr.toLowerCase()));
+  // Filter categories: if category is set, only suggest the active category if it matches the query
+  let matchedCategories = [];
+  if (category) {
+    if (category.toLowerCase().includes(queryStr.toLowerCase())) {
+      matchedCategories = [category];
+    }
+  } else {
+    matchedCategories = PREDEFINED_CATEGORIES.concat(usedCategories)
+      .filter(cat => cat.toLowerCase().includes(queryStr.toLowerCase()));
+  }
   const uniqueCategories = [...new Set(matchedCategories)].slice(0, 3);
 
   // Combine suggestions into a unified array

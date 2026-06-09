@@ -15,14 +15,16 @@ export interface HistoryItem {
 }
 
 // ─── Fetch Autocomplete Suggestions ───
-export function useSearchSuggestionsQuery(q: string) {
+export function useSearchSuggestionsQuery(q: string, category?: string | null) {
   return useQuery({
-    queryKey: ['searchSuggestions', q],
+    queryKey: ['searchSuggestions', q, category],
     enabled: q.trim().length > 0,
     queryFn: async () => {
-      const res = await apiClient.get('/search/suggestions', {
-        params: { q: q.trim() },
-      });
+      const params: Record<string, string> = { q: q.trim() };
+      if (category && category !== 'For you' && category !== 'Following') {
+        params.category = category;
+      }
+      const res = await apiClient.get('/search/suggestions', { params });
       return res.data.data as Suggestion[];
     },
     staleTime: 30 * 1000, // Cache suggestions for 30 seconds

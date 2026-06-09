@@ -77,7 +77,8 @@ function TopNavBarContent() {
   }, []);
 
   // Fetch queries
-  const { data: suggestions = [] } = useSearchSuggestionsQuery(debouncedQuery);
+  const categoryParam = searchParams ? searchParams.get('category') : null;
+  const { data: suggestions = [] } = useSearchSuggestionsQuery(debouncedQuery, categoryParam);
   const { data: dbHistory = [] } = useSearchHistoryQuery(accessToken);
   const saveSearchMutation = useSaveSearchMutation(accessToken);
   const deleteSearchMutation = useDeleteSearchMutation(accessToken);

@@ -17,7 +17,7 @@ const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 export default async function LibraryPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get('writen_access_token')?.value;
-
+ 
   if (!token) {
     redirect('/login?redirect=/library');
   }
@@ -82,7 +82,7 @@ export default async function LibraryPage() {
     <div className="min-h-screen bg-surface flex flex-col font-body-md text-on-surface">
       <TopNavBar />
 
-      <div className="flex-1 w-full max-w-[1280px] md:w-[80%] mx-auto flex gap-6 md:gap-10 px-4 md:px-6">
+      <div className="flex-1 w-full max-w-[1280px] md:w-[80%] mx-auto flex gap-3 md:gap-4 px-4 md:px-6">
         <SideNavBar />
         <LibraryPageClient
           initialBookmarks={initialBookmarks}

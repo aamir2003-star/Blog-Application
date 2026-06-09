@@ -66,7 +66,7 @@ export default async function FeedPage({ searchParams }: PageProps) {
     <div className="min-h-screen bg-surface flex flex-col">
       <TopNavBar />
       
-      <div className="flex-1 w-full max-w-[1280px] md:w-[80%] mx-auto flex gap-6 md:gap-10 px-4 md:px-6">
+      <div className="flex-1 w-full max-w-[1280px] md:w-[80%] mx-auto flex gap-3 md:gap-4 px-4 md:px-6">
         <SideNavBar />
         
         <div className="flex-1 flex justify-center w-full">

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import { useAuth } from '@/lib/auth-context';
 import { getPostsAction } from '@/app/actions/posts';
 import PostCard from './PostCard';
 import PostCardSkeleton from './PostCardSkeleton';
@@ -21,6 +23,7 @@ export default function FeedPageClient({
 }: FeedPageClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user } = useAuth();
 
   // Dynamic Tabs & Filter States
   const [activeTab, setActiveTab] = useState(categoryParam || 'For you');
@@ -138,10 +141,19 @@ export default function FeedPageClient({
         ) : posts.length === 0 ? (
           <div className="text-center py-20 space-y-4">
             <span className="material-symbols-outlined text-5xl text-outline-variant animate-bounce">article</span>
-            <h3 className="font-headline-md text-xl text-on-surface font-semibold">No stories here yet</h3>
+            <h3 className="font-headline-md text-xl text-on-surface font-semibold">No stories yet</h3>
             <p className="font-body-md text-on-surface-variant max-w-sm mx-auto">
-              There are no published articles under this topic right now. Try check back later or start writing a new story!
+              There are no published articles under this topic right now.
             </p>
+            <div className="pt-2">
+              <Link
+                href={user ? '/write' : '/login'}
+                className="inline-flex items-center gap-2 bg-primary text-on-primary font-label-caps text-xs px-5 py-2.5 rounded-full hover:bg-primary-container hover:text-on-primary-container transition-all active:scale-95 shadow-sm font-semibold decoration-none cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-[16px]">edit_square</span>
+                Write a Story
+              </Link>
+            </div>
           </div>
         ) : (
           <>
