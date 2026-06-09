@@ -3,7 +3,7 @@
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 
-// Define PDF styles matching the Writen branding
+// Define stable PDF styles matching the Writen branding
 const styles = StyleSheet.create({
   page: {
     paddingTop: 65,
@@ -19,11 +19,6 @@ const styles = StyleSheet.create({
     top: 30,
     left: 50,
     right: 50,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#bbcabb',
-    paddingBottom: 4,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     fontSize: 8,
     color: '#5f5e5e',
   },
@@ -32,13 +27,13 @@ const styles = StyleSheet.create({
     bottom: 30,
     left: 50,
     right: 50,
-    borderTopWidth: 0.5,
-    borderTopColor: '#bbcabb',
-    paddingTop: 4,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     fontSize: 8,
     color: '#5f5e5e',
+  },
+  divider: {
+    height: 0.5,
+    backgroundColor: '#bbcabb',
+    width: '100%',
   },
   title: {
     fontSize: 22,
@@ -50,10 +45,7 @@ const styles = StyleSheet.create({
   authorRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
-    paddingBottom: 8,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#bbcabb',
+    marginBottom: 8,
     fontSize: 9,
     color: '#5f5e5e',
   },
@@ -95,35 +87,36 @@ const styles = StyleSheet.create({
     fontSize: 8.5,
     backgroundColor: '#f4f4f2',
     padding: 8,
-    borderRadius: 4,
     marginBottom: 8,
     lineHeight: 1.35,
-    whiteSpace: 'pre-wrap',
   },
   coverImage: {
     width: '100%',
     height: 180,
-    objectFit: 'cover',
-    borderRadius: 6,
     marginBottom: 16,
   },
   inlineImage: {
     width: '100%',
     height: 150,
-    objectFit: 'cover',
-    borderRadius: 4,
     marginVertical: 10,
   },
   hr: {
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#bbcabb',
+    height: 0.5,
+    backgroundColor: '#bbcabb',
     marginVertical: 12,
+    width: '100%',
   },
   blockquote: {
-    borderLeftWidth: 3,
-    borderLeftColor: '#006d38',
-    paddingLeft: 10,
+    flexDirection: 'row',
     marginVertical: 10,
+  },
+  blockquoteBar: {
+    width: 3,
+    backgroundColor: '#006d38',
+  },
+  blockquoteContent: {
+    flex: 1,
+    paddingLeft: 10,
   },
   blockquoteText: {
     fontFamily: 'Helvetica-Oblique',
@@ -287,9 +280,12 @@ const parseHtmlToPdfComponents = (html: string) => {
 
       components.push(
         <View key={index} style={styles.blockquote}>
-          <Text style={styles.blockquoteText}>
-            {children}
-          </Text>
+          <View style={styles.blockquoteBar} />
+          <View style={styles.blockquoteContent}>
+            <Text style={styles.blockquoteText}>
+              {children}
+            </Text>
+          </View>
         </View>
       );
     }
@@ -317,10 +313,13 @@ export function ArticlePDFDocument({ post }: ArticlePDFDocumentProps) {
       <Page size="A4" style={styles.page}>
         {/* Recurring Header */}
         <View style={styles.header} fixed>
-          <Text>Writen | Sharing Engineering Voice</Text>
-          <Text style={{ maxWidth: 220 }}>
-            {post.title && post.title.length > 40 ? post.title.substring(0, 40) + '...' : post.title}
-          </Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginBottom: 4 }}>
+            <Text>Writen | Sharing Engineering Voice</Text>
+            <Text style={{ maxWidth: 220 }}>
+              {post.title && post.title.length > 40 ? post.title.substring(0, 40) + '...' : post.title}
+            </Text>
+          </View>
+          <View style={styles.divider} />
         </View>
 
         {/* Optional Cover Banner */}
@@ -335,6 +334,7 @@ export function ArticlePDFDocument({ post }: ArticlePDFDocumentProps) {
         <View style={styles.authorRow}>
           <Text>{`By ${post.authorId?.name || 'Anonymous'}  •  Published ${formattedDate}  •  ${post.category || 'General'}`}</Text>
         </View>
+        <View style={styles.hr} />
 
         {/* HTML Parsed Document Content blocks */}
         <View>
@@ -343,8 +343,11 @@ export function ArticlePDFDocument({ post }: ArticlePDFDocumentProps) {
 
         {/* Recurring Footer with Page Numbers */}
         <View style={styles.footer} fixed>
-          <Text>writen.com</Text>
-          <Text render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
+          <View style={styles.divider} />
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 4 }}>
+            <Text>writen.com</Text>
+            <Text render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
+          </View>
         </View>
       </Page>
     </Document>
