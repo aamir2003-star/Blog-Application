@@ -89,7 +89,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     return null;
   });
-  const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [accessToken, setAccessToken] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      const match = document.cookie.match(/(^| )writen_access_token=([^;]*)/);
+      return match ? decodeURIComponent(match[2]) : null;
+    }
+    return null;
+  });
   const [loading, setLoading]         = useState(() => {
     if (typeof window !== 'undefined') {
       return !localStorage.getItem('writen_user');
