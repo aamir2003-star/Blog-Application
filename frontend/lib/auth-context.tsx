@@ -130,16 +130,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const res = await apiClient.post('/auth/refresh');
         const data = res.data;
-        // Session restored — log in immediately (no popup needed)
+        // Session restored — log in immediately
         commitUser(data.user, data.accessToken);
         return;
-      } catch {
-        /* network error — treat as no session */
-        setUser(null);
-        setAccessToken(null);
-        try {
-          localStorage.removeItem('writen_user');
-        } catch {}
+      } catch (err: any) {
+        const status = err?.response?.status;
+
+        if (status === 401 || status === 403) {
+          // Server explicitly rejected the refresh token — session is genuinely expired.
+          // Clear everything so the user is fully logged out.
+          setUser(null);
+          setAccessToken(null);
+          try { localStorage.removeItem('writen_user'); } catch {}
+        }
+        // For all other errors (network timeout, Render cold start, 500, etc.),
+        // DO NOT clear the user. Keep the cached user from localStorage so the UI
+        // stays usable. The axios interceptor will silently retry the refresh the
+        // next time any authenticated API call returns a 401.
       }
 
       // No active session — read the last-user snapshot to show the popup

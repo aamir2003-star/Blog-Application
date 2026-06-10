@@ -29,8 +29,10 @@ app.use(helmet());
  * on /api/auth/refresh requests.
  */
 const allowedOrigins = [
-  process.env.CLIENT_URL,        // e.g. http://localhost:3000
-  'http://localhost:3000',       // fallback for local dev
+  process.env.CLIENT_URL,                               // configurable via env var
+  'http://localhost:3000',                              // local Next.js dev
+  'http://localhost:5001',                              // local backend self-calls
+  'https://blog-application-one-tan.vercel.app',        // production Vercel frontend
 ];
 
 app.use(
