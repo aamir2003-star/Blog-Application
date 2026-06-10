@@ -60,6 +60,38 @@ const transporter = createTransporter();
  * @param {Object} options - { to, subject, html }
  */
 export const sendEmail = async ({ to, subject, html }) => {
+  // 1. If Resend API key is configured, use it (recommended for Render production to bypass SMTP block)
+  if (process.env.RESEND_API_KEY) {
+    // Note: Resend free tier requires the sender to be 'onboarding@resend.dev' unless you verify a domain.
+    const fromEmail = process.env.EMAIL_FROM || 'onboarding@resend.dev';
+    
+    try {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: fromEmail,
+          to: [to],
+          subject,
+          html,
+        }),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Resend API response error: ${errText}`);
+      }
+      return;
+    } catch (error) {
+      console.error('Resend Email Error:', error);
+      throw error;
+    }
+  }
+
+  // 2. Fallback to Nodemailer SMTP
   if (!transporter) {
     // Dev fallback — print the email content to the console
     console.log('\n📧 ─── EMAIL (no SMTP configured) ───────────────────────');
