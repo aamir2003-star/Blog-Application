@@ -23,7 +23,7 @@ const styles = StyleSheet.create({
     left: 50,
     width: PAGE_WIDTH,
     height: 16,
-    fontSize: 8,
+    fontSize: 7,
     color: '#5f5e5e',
   },
   headerRow: {
@@ -33,11 +33,11 @@ const styles = StyleSheet.create({
   },
   headerLeft: {
     width: 275,
-    fontSize: 8,
+    fontSize: 7,
   },
   headerRight: {
     width: 220,
-    fontSize: 8,
+    fontSize: 7,
     textAlign: 'right',
   },
   footer: {
@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
     left: 50,
     width: PAGE_WIDTH,
     height: 16,
-    fontSize: 8,
+    fontSize: 7,
     color: '#5f5e5e',
   },
   footerRow: {
@@ -56,11 +56,11 @@ const styles = StyleSheet.create({
   },
   footerLeft: {
     width: 248,
-    fontSize: 8,
+    fontSize: 7,
   },
   footerRight: {
     width: 247,
-    fontSize: 8,
+    fontSize: 7,
     textAlign: 'right',
   },
   divider: {
@@ -410,11 +410,8 @@ export function ArticlePDFDocument({ post }: ArticlePDFDocumentProps) {
         <View style={styles.footer} fixed>
           <View style={styles.divider} />
           <View style={styles.footerRow}>
-            <Text style={styles.footerLeft}>writen.com</Text>
-            <Text
-              style={styles.footerRight}
-              render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
-            />
+            <Text style={styles.footerLeft}>{`By ${post.authorId?.name || 'Anonymous'}`}</Text>
+            <Text style={styles.footerRight}>{post.category || 'General'}</Text>
           </View>
         </View>
       </Page>
