@@ -106,14 +106,20 @@ export default function ArticleDetailPageClient({ post }: ArticleDetailPageClien
   const handleToggleBookmark = () => {
     if (post?._id) {
       const nextState = !isBookmarked;
+      console.log('[Bookmark Debug] Clicking bookmark button. Current:', isBookmarked, 'Next:', nextState);
       setIsBookmarked(nextState);
       toggleBookmarkMutation.mutate(post._id, {
-        onError: () => {
+        onError: (err) => {
+          console.error('[Bookmark Debug] Mutation failed:', err);
           setIsBookmarked(!nextState);
         },
         onSuccess: (data) => {
+          console.log('[Bookmark Debug] Mutation succeeded. Response data:', data);
           if (data && typeof data.bookmarked === 'boolean') {
+            console.log('[Bookmark Debug] Setting isBookmarked to:', data.bookmarked);
             setIsBookmarked(data.bookmarked);
+          } else {
+            console.warn('[Bookmark Debug] Response data.bookmarked is not a boolean or is missing!');
           }
         }
       });
