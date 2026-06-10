@@ -16,15 +16,22 @@ async function handleProxy(req: NextRequest) {
   });
 
   try {
-    const body = req.method !== 'GET' && req.method !== 'HEAD'
-      ? await req.arrayBuffer()
-      : undefined;
+    let body: any = undefined;
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      try {
+        const contentLength = req.headers.get('content-length');
+        if (contentLength && contentLength !== '0') {
+          body = await req.arrayBuffer();
+        }
+      } catch (e) {
+        console.warn('Failed to read request body in proxy:', e);
+      }
+    }
 
     const response = await fetch(targetUrl, {
       method: req.method,
       headers,
       body,
-      // Do not follow redirects automatically, let the browser handle them
       redirect: 'manual',
     });
 
@@ -32,9 +39,18 @@ async function handleProxy(req: NextRequest) {
     const resBody = await response.arrayBuffer();
     const resHeaders = new Headers();
 
-    // Copy all response headers from backend
+    // Copy response headers, excluding hop-by-hop and compression headers
     response.headers.forEach((value, key) => {
-      resHeaders.set(key, value);
+      const lowerKey = key.toLowerCase();
+      if (![
+        'connection',
+        'keep-alive',
+        'transfer-encoding',
+        'content-encoding',
+        'content-length'
+      ].includes(lowerKey)) {
+        resHeaders.set(key, value);
+      }
     });
 
     // In Next.js/Vercel edge, fetch might merge multiple Set-Cookie headers.
