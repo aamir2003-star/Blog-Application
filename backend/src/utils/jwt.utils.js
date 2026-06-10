@@ -97,7 +97,7 @@ export const refreshCookieOptions = {
   secure: process.env.NODE_ENV === 'production',
   sameSite: 'lax',
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
-  path: '/api/auth', // Cookie only sent to /api/auth/* endpoints
+  path: '/', // Set path to root so it is stored and sent correctly across all pages
 };
 
 /**
@@ -107,5 +107,5 @@ export const clearCookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
   sameSite: 'lax',
-  path: '/api/auth',
+  path: '/',
 };
