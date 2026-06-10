@@ -5,14 +5,11 @@ import OAuthCallbackInner from './callback-inner';
 
 export default function OAuthCallbackPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-          <div className="w-10 h-10 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-gray-400 text-sm">Completing sign-in…</p>
-        </div>
-      }
-    >
+    // Suspense fallback is an invisible blank screen that matches the app background.
+    // The actual redirect to onboarding happens in milliseconds on a normal connection,
+    // so there is no benefit to showing a spinner here — a blank screen is far better
+    // than a flash of foreign-coloured UI.
+    <Suspense fallback={<div className="min-h-screen bg-surface" />}>
       <OAuthCallbackInner />
     </Suspense>
   );
