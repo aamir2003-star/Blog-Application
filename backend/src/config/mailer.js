@@ -22,7 +22,7 @@ const createTransporter = () => {
   const secure = process.env.SMTP_SECURE === 'true'; // true = TLS (port 465), false = STARTTLS (port 587)
 
   const user = process.env.SMTP_USER || '';
-  const pass = process.env.SMTP_PASS || '';
+  const pass = (process.env.SMTP_PASS || '').replace(/\s+/g, '');
 
   // Detect unconfigured / placeholder credentials
   const isPlaceholder =
