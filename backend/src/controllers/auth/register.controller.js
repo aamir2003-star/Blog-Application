@@ -51,7 +51,7 @@ export const initRegister = async (req, res) => {
     await OTPRecord.deleteOne({ email }); // Cleanup
     console.error('SMTP Error:', err.message);
     throw new AppError(
-      'Failed to send verification code. Please check your backend SMTP credentials in .env',
+      `Failed to send verification code: ${err.message}. Please check your backend SMTP credentials.`,
       500
     );
   }
@@ -174,7 +174,7 @@ export const resendOtp = async (req, res) => {
   } catch (err) {
     console.error('SMTP Error (Resend):', err.message);
     throw new AppError(
-      'Failed to send verification code. Please check your backend SMTP credentials in .env',
+      `Failed to send verification code: ${err.message}. Please check your backend SMTP credentials.`,
       500
     );
   }
